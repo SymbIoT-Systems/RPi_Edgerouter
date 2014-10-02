@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
+          rel="stylesheet">
+    
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    </script>
+    <script type="text/javascript" src="static/socket.io.js"></script>
+
+    <script>
+    $(document).ready(function(){
+      var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
+      //var socket = io.connect('http://192.168.137.102:5000/test');
+      $("#stoplisten").hide();
+
+      socket.on('my response', function(msg) {
+        $('#consolebox').append('<p>Received: ' + msg.data + '</p>');
+  $('#consolebox').scrollTop($('#consolebox')[0].scrollHeight);
+      });
+
+      $("#switch").click(function(){
+  var imagenum=$("#imagenumber").val();
+  $.post("/switch/",{imagenum:imagenum},function(result,status){
+    alert(result);
+  });
+  });
+
+$("#ping").click(function(){
+  var nodenum=$("#quantity").val();
+  $.post("/ping/",{nodenum:nodenum},function(result,status){
+    alert(result);
+  });
+});
+
+$("#listen").click(function(){
+    socket.emit('listen');
+    $("#stoplisten").show();
+    $("#listen").hide();
+});
+
+$("#stoplisten").click(function(){
+  $.post("/stop/");
+  $("#listen").show();
+  $("#stoplisten").hide();
+});
+    });
+  </script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h3 class="text-muted">How To Upload a File</h3>
+      </div>
+      <hr/>
+      <div>
+      
+      <form action="upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file"><br /><br />
+        <input type="submit" value="Flash">
+      </form>
+      </div>
+      <hr/>
+      Ping Node number:
+      <input type="number" id="quantity" name="quantity" min="2" max="10" value="2">
+      <button name="ping" id="ping" >Ping</button>
+      <hr/>
+      Please select image number to switch to:
+      <input type="number" id="imagenumber" name="imagenumber" min="1" max="3" value="1">
+      
+      <button name="switch" id="switch" >Switch</button>
+      <hr/>
+      <button name="listen" id="listen" >Listen</button>
+      <button name="stoplisten" id="stoplisten" >Stop Listen</button>
+    </div>
+    <div id="consolebox" style="overflow:scroll; height:200px;">
+      {{data}}
+    </div>
+  </body>
+</html>
