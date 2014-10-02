@@ -4,12 +4,10 @@ Features:
 
 1.Ping selective nodes
 2.Upload tos_image.xml files
-3.Listen mode: Basestation sniffer? Show output in a console online? 
+3.Listen mode: Basestation sniffer? Show output in a console online
 4.Switch images on all nodes
-5.Detect a basestation plugged into laptop and read its contents in the eeprom slots
-
-
-
+5.Detect a basestation plugged into laptop 
+6.Read basestation's contents in the eeprom slots (later)
 
 '''
 
@@ -23,8 +21,12 @@ import subprocess
 from pyudev import Context, Monitor, MonitorObserver, Device
 import sys 
 
+templateData = {
+    'data':"Nothing yet"
+}
+
 #Ensure that the initial base path while launching the server is correct
-usb_path_base = "/dev/ttyUSB1"
+usb_path_base = os.getenv('motepath', "/dev/ttyUSB0")
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -45,11 +47,13 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
 
-def uploadtomote():
-	proc = subprocess.Popen(["tos-deluge serial@"+usb_path_base+":115200 -p 1"],stdout=subprocess.PIPE,shell = True)
-	out=proc.communicate()[0]
-	socketio.emit('my response',out,namespace='/test')
-	print "heres"
+def uploadtomote(slotnum,imgpath):
+
+    print "Uploading to slot number "+slotnum
+    proc = subprocess.Popen(["sym-deluge flash " + slotnum + " "  + imgpath], stdout=subprocess.PIPE,shell=True)
+    (out,err) = proc.communicate()
+    
+    return out 
 
 
 def serial_socket():
@@ -69,7 +73,7 @@ def serial_socket():
 #App routes         
 @app.route('/')
 def index():
-    return render_template('main.html')
+    return render_template('main.html',**templateData)
 
 @app.route('/ping/', methods=['POST'])
 def ping():
@@ -110,12 +114,20 @@ def upload():
     if file and allowed_file(file.filename):
         # Make the filename safe, remove unsupported chars
         filename = secure_filename(file.filename)
-        
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        imagepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(imagepath)
         #return redirect(url_for('uploaded_file',
         #                        filename=filename))
-	uploadtomote()
-	return redirect('/')
+    
+    data1 = uploadtomote(request.form['imagenumber'],imagepath)
+    print data1
+
+    global templateData
+
+    templateData = {
+    'data':data1
+    }
+    return redirect('/')
 	
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
@@ -142,14 +154,14 @@ def stop():
 
 #USB auto-detection of BaseStation port and activities
 
-@app.route('/automount',methods=['POST'])
-def automount():
-    if request.form['status']=="Added":
-        port=request.form['port']
-        global usb_path_base
-        usb_path_base=port
-        print port
-    return "0"
+# @app.route('/automount',methods=['POST'])
+# def automount():
+#     if request.form['status']=="Added":
+#         port=request.form['port']
+#         global usb_path_base
+#         usb_path_base=port
+#         print port
+#     return "0"
 
 if __name__ == '__main__':
     socketio.run(app,host='0.0.0.0',port=8080)

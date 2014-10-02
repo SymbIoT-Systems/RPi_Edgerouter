@@ -1,0 +1,136 @@
+#!/usr/bin/python2
+
+# Copyright (c) 2014 SymbIoT Systems
+# All rights reserved.
+#
+ # Redistribution and use in source and binary forms, with or without
+ # modification, are permitted provided that the following conditions
+ # are met:
+ #
+ # - Redistributions of source code must retain the above copyright
+ #   notice, this list of conditions and the following disclaimer.
+ # - Redistributions in binary form must reproduce the above copyright
+ #   notice, this list of conditions and the following disclaimer in the
+ #   documentation and/or other materials provided with the
+ #   distribution.
+ # - Neither the name of the copyright holders nor the names of
+ #   its contributors may be used to endorse or promote products derived
+ #   from this software without specific prior written permission.
+ #
+ # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ # FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ # THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ # INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ # (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ # SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ # HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ # OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# @author Mayank Joneja <mayank@symbiotsystems.com>
+# @author Laksh Bhatia <laksh@symbiotsystems.com>
+# @date September 2014
+
+'''
+Script to offer simpler user functionality for overall testbed usage by calling tos-deluge functions in the background
+
+Functions to be provided:
+1.Code inject and flash i.e. call -ls and -s followed by -i and -dr [slot number]
+2.Code switching on all devices using -dr 
+3.Pinging to see if a remote node is alive using -pr
+4.Switch the edgerouter to/from sniffer mode using -sr 
+
+REMEMBER: Always recompile before using flash command! tos-deluge works based on new UID for tos_image.xml
+'''
+
+
+import os
+import sys
+from time import sleep
+
+
+motepath=os.getenv('motepath', "/dev/ttyUSB0")
+serialpath = "serial@"+motepath+":115200"
+basecommand = "tos-deluge " + serialpath
+
+def usage():
+	print "Usage: sym-deluge <command> <parameters>\n"
+	print "flash <slot number> <image.xml file path>"
+	print "ping <remote node id>"
+	print "switch <slot number>"
+	print "listen"
+
+def radiostate(state):
+	print "Changing radiostate\n"
+	os.system(basecommand + " -sr " + str(state))
+	sleep(2)
+
+
+if len(sys.argv) >= 2:
+
+	if sys.argv[1]=="ping":
+		if len(sys.argv) == 3:
+			radiostate(0)
+			
+			nodeid = sys.argv[2]
+			os.system(basecommand + " -pr " + nodeid)
+
+			radiostate(1)
+		else:
+			usage()
+
+	elif sys.argv[1]=="flash":
+		if len(sys.argv) == 4:
+			slot = sys.argv[2]
+			filename = sys.argv[3]
+
+			print "Calling localstop\n"
+			os.system(basecommand + " -ls")
+
+			sleep(2)
+
+			print "Calling stop\n"
+			os.system(basecommand + " -s")
+
+			sleep(2)
+			
+			print "Calling stopradio\n" #Stopping radio while flashing/injecting new image
+			radiostate(0)
+
+			print "Injecting into Basestation\n"
+			os.system(basecommand + " -i " + slot + " " + filename)
+			sleep(2)
+
+			print "Flashing remote nodes\n"
+			os.system(basecommand + " -dr " + slot)
+			sleep(10)
+			
+			print "Restarting Radio\n" #Restart radio
+			radiostate(1)
+
+		else:
+			usage()
+
+	elif sys.argv[1]=="switch":
+		if len(sys.argv) == 3:
+			radiostate(0)
+			
+			slot = sys.argv[2]
+			os.system(basecommand + " -dr " + slot)
+		
+			radiostate(1)
+		
+		else:
+			usage()
+			
+	elif sys.argv[1]=="listen":
+		os.system(basecommand + " -l")
+
+	else:
+		usage()
+
+else:
+	usage()
