@@ -68,11 +68,31 @@ def serial_socket():
 						templateData={'data':''.join(line)}	
 						socketio.emit('my response',{'data':''.join(line)},namespace='/test')
 						line=[]
-		
+
+def isNodeAlive(nodenum):
+    proc = subprocess.Popen(["sym-deluge ping " + str(nodenum)],stdout=subprocess.PIPE,shell = True)
+    (out,err) = proc.communicate()
+    #out += "\nPinged node number " + str(nodenum)
+
+    if "Command sent" in out:
+        #out="\nPinged " + str(nodenum) + " successfully!"
+        out = True
+            
+    else:
+        #out="\nPing of node no. " + str(nodenum) + " failed!"
+        out = False
+    return out
+
 
 #App routes         
 @app.route('/')
 def index():
+    cluster_status = []
+    for i in range (1,8):
+        cluster_status.append(isNodeAlive(i)) 
+
+    print cluster_status
+
     return render_template('main.html',**templateData)
 
 @app.route('/ping/', methods=['POST'])
