@@ -19,7 +19,8 @@ from flask.ext.socketio import SocketIO, emit
 from time import sleep
 import subprocess
 from pyudev import Context, Monitor, MonitorObserver, Device
-import sys
+import sys 
+import threading
 
 templateData = {
     'data':"Nothing yet"
@@ -47,13 +48,30 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in app.config['ALLOWED_EXTENSIONS']
 
+def ackreceived():
+    line=[]
+    ser1=serial.Serial(port=usb_path_base,baudrate=115200)
+    while True:
+        for c in ser1.read():
+            line.append(c.encode('hex'))
+            if c.encode('hex')=="7e":
+                if line.count('7e')==2:
+                    packet=''.join(line)
+                    if packet[24:30]=="003f53":
+                        print packet[22:24]
+                        ser1.close()
+                        return 0
+                    line=[]
+
+
 def uploadtomote(slotnum,imgpath):
 
     print "Uploading to slot number "+slotnum
     proc = subprocess.Popen(["sym-deluge flash " + slotnum + " "  + imgpath], stdout=subprocess.PIPE,shell=True)
     #(out,err) = proc.communicate()
     #out=proc.stdout.read()
-    return "Flash Initiated"
+    thread = threading.Thread(target=ackreceived)
+    thread.start()
     #print out 
 
 
@@ -88,7 +106,7 @@ def isNodeAlive(nodenum):
 @app.route('/')
 def index():
 
-    return render_template('main.html',**templateData)
+    return render_template('main2.html',**templateData)
 
 @app.route('/cluster_status/',methods=['POST'])
 def pingall():
@@ -143,16 +161,16 @@ def upload():
         #return redirect(url_for('uploaded_file',
         #                        filename=filename))
     
-    data1=uploadtomote(request.form['imagenumber'],imagepath)
+    #data1 = uploadtomote(request.form['imagenumber'],imagepath)
     
-    # thread = threading.Thread(target=uploadtomote,args=(request.form['imagenumber'],imagepath))
-    # thread.start()
+    thread = threading.Thread(target=uploadtomote,args=(request.form['imagenumber'],imagepath))
+    thread.start()
 
-    global templateData
+    # global templateData
 
-    templateData = {
-     'data':data1
-    }
+    # templateData = {
+    # 'data':data1
+    # }
     return redirect('/')
 	
 @app.route('/uploads/<filename>')
@@ -181,23 +199,6 @@ def stop():
 	#print dataneed
     return "0"
 
-
-@app.route('/ackreceived/',methods=['POST'])
-def ackreceived():
-    line=[]
-    ser1=serial.Serial(port=usb_path_base,baudrate=115200)
-    while True:
-        for c in ser1.read():
-            line.append(c.encode('hex'))
-            if c.encode('hex')=="7e":
-                if line.count('7e')==2:
-                    packet=''.join(line)
-                    if packet[24:30]=="003f53":
-                        print packet[22:24]
-                        ser1.close()
-                        return packet[22:24]
-                line=[]
-
 #USB auto-detection of BaseStation port and activities
 
 # @app.route('/automount',methods=['POST'])
@@ -210,4 +211,4 @@ def ackreceived():
 #     return "0"
 
 if __name__ == '__main__':
-    socketio.run(app,host='0.0.0.0',port=8080)
+    socketio.run(app,host='0.0.0.0',port=8090)
