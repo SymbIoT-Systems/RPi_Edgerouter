@@ -4,25 +4,38 @@
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
           rel="stylesheet">
     <!-- Local stylesheet -->
+    
     <link rel="stylesheet" type="text/css" href="static/style.css">
     
-    <script src="static/jquery.min.js"></script>
-    <script type="text/javascript" src="static/socket.io.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+    
 
     <script>
     $(document).ready(function(){
 
-      var data = [['NodeNum', 'Status', 'LastChecked','Ping' ]];
+
+      var titledata = [['NodeNum', 'Status',]];
 
       var html = '<table><tbody>';
-      for (var i = 0, len = 9; i < len; ++i) {
+      for (var i = 0, rowNum = 9; i < rowNum; ++i) {
         html += '<tr>';
-        for (var j = 0, rowLen = 4; j < rowLen; ++j ) {
+        for (var j = 0, colNum = 2; j < colNum; ++j ) {
           if (i==0) {
-            html += '<td>' + data[i][j] + '</td>';
-          }else if(j==3){
-            html += '<td><button name="ping" id="ping" >Ping</button></td>';
-          }else{
+            html += '<td>' + titledata[i][j] + '</td>';
+          }
+
+          else if(j==0){
+            html+= '<td>'+ i + '</td>';
+          }
+          else if (j==1){
+            html += '<td id="status'+i+'">Checking....</td>';
+          }
+          // else if(j==2){
+          //   html += '<td><button name="ping" id="ping" >Ping</button></td>';
+          // }
+
+          else{
             html += '<td>dummy data</td>';
           };
           
@@ -34,21 +47,43 @@
       $(html).appendTo('#table1');
 
 
-      if ($("#consolebox").text().match("Flash Initiated")) {//Flash Initiated
+      if ($("#consolebox").text().match("Flash Initiated")) {
         $("#noTrespassingAnimationG").show();
 
-        setTimeout(function(){
-          $.post("/ackreceived/",{data:'1'},function(result,status){
+        // setTimeout(function(){
+        //   $.post("/ackreceived/",{data:'1'},function(result,status){
+        //   alert(result);
+        //  });
+        // }, 90000);
+      $.post("/flashnode/",function(result, status){
+        $("#consolebox").append(result.replace(/\n/g, "<br/>"));
+        $.post("/ackreceived/",{data:'1'},function(result,status){
           alert(result);
          });
-        }, 90000);
-      }else{
+      });
+      }
+      else{
         $("#noTrespassingOuterBarG").hide();
       };
-      
-    // $.post("/cluster_status/",{data:'1'},function(result,status){
-    //     alert(result);
-    // });
+
+      $("#ping").prop("disabled",true);
+      function isclusteralive (argument) {
+        var count=1;
+        var intervalcluster=setInterval(function(){
+          if(count==8){
+            clearInterval(intervalcluster);
+            $("#ping").prop("disabled",false);
+          }
+          $.post("/cluster_status/",{data:count},function(result,status){
+            data1=$.parseJSON(result);
+              $('#status'+data1['1']).html(data1['0']);
+        });
+          count++;
+        }
+        ,5000);
+      }
+
+      // isclusteralive();
       /*-------------------- EXPANDABLE PANELS ----------------------*/
         var panelspeed = 300; //panel animate speed in milliseconds
         var totalpanels = 3; //total number of collapsible panels
@@ -137,10 +172,11 @@
       });
 
       $("#ping").click(function(){
-      var nodenum=$("#quantity").val();
-      $.post("/ping/",{nodenum:nodenum},function(result,status){
-        alert(result);
-        });
+        for (var i = 1; i < 9; i++) {
+         $('#status'+i).html('Checking...');
+        };
+        $('#ping').prop("disabled",true);
+        isclusteralive();
       });
 
       $("#listen").click(function(){
@@ -185,6 +221,12 @@
         $('#baseimage').html("</br>"+data1['baseimagedata'].replace(/\n/g, "<br/>"));
         $('#consolebox').html(data1['consoledata'].replace(/\n/g, "<br/>"));
       
+      });
+    });
+
+    $("#logfile").click(function(){
+      $.post("/savelog/",{filedata:$("#consolebox").html()},function (result,status) {
+        //alert(result);
       });
     });
 });
@@ -253,20 +295,19 @@
           <div id="table1" class="CSSTableGenerator"></div>
           </br>
           </br>
-        Ping Node number:
-        <input type="number" id="quantity" name="quantity" min="2" max="10" value="2">
-        <button name="ping" id="ping" >Ping</button>
+        <!-- <input type="number" id="quantity" name="quantity" min="2" max="10" value="2"> -->
+        <button name="ping" id="ping">Ping All Nodes</button>
         </center>
         </br>
         </br>
         <h4>Basestation Details:</h4>
         <p>
           <!-- Status: -->
-          <center><div class="baseimagebox" id="baseimage">
+          <center>
+          <div class="baseimagebox" id="baseimage">
           </br>
             {{baseimagedata}}
-
-          </div></center>
+          </div>
           <!-- Data coming from tos-deluge -p of basestation -->
 
         <!-- Switch images on all remote nodes -->
@@ -276,14 +317,16 @@
         <button name="switch" id="switch" >Switch</button>-->
 
        <form action="switch/" id="formswitch" name="formswitch">
+       </br>
           <input type="radio" name="imagenumberswitch" value="1" checked>Slot 1<br>
           <input type="radio" name="imagenumberswitch" value="2">Slot 2<br>
           <input type="radio" name="imagenumberswitch" value="3">Slot 3<br>
+        </br>
           <input type="submit" value="Switch">
         </form>
+        </center>
       </br>
         <!-- <button name="switch" id="switch" >Switch</button> -->
-        </br>
         </br>
         </div>
       </div>
@@ -302,10 +345,9 @@
           <button name="listen" id="listen" >Listen</button>
           <button name="stoplisten" id="stoplisten" >Stop Listen</button>
           </br>
-          <input type="checkbox" name="logfile" value="log"> Log data to file<br>
           </br>
-          
-
+          <button id="logfile"> Download data to file</button>
+          </br>
         </div>
       </div>
       

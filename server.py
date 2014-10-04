@@ -4,15 +4,15 @@ Features:
 
 1.Ping selective nodes
 2.Upload tos_image.xml files
-3.Listen mode: Basestation sniffer? Show output in a console online
-4.Switch images on all nodes
+3.Listen mode: Basestation sniffer? Show output in a console online --DONE!
+4.Switch images on all nodes --DONE!
 5.Detect a basestation plugged into laptop 
 6.Read basestation's contents in the eeprom slots (later)
 
 '''
 
 import os
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory,Response
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, Response, send_file, make_response
 from werkzeug import secure_filename
 import serial
 from flask.ext.socketio import SocketIO, emit
@@ -22,10 +22,15 @@ from pyudev import Context, Monitor, MonitorObserver, Device
 import sys
 import json
 
+#Global variable declarations
+
 templateData = {
     'consoledata':"Nothing yet",
     'baseimagedata':"BaseStation offline"
 }
+
+slotnum = 1
+imagepath = "uploads/"
 
 #Ensure that the initial base path while launching the server is correct
 usb_path_base = os.getenv('motepath', "/dev/ttyUSB0")
@@ -53,9 +58,9 @@ def uploadtomote(slotnum,imgpath):
 
     print "Uploading to slot number "+slotnum
     proc = subprocess.Popen(["sym-deluge flash " + slotnum + " "  + imgpath], stdout=subprocess.PIPE,shell=True)
-    #(out,err) = proc.communicate()
-    #out=proc.stdout.read()
-    return "Flash Initiated"
+    (out,err) = proc.communicate()
+    #out=proc.stdout.read()upl
+    return out
     #print out 
 
 
@@ -72,17 +77,22 @@ def serial_socket():
 						line=[]
 
 def isNodeAlive(nodenum):
-    proc = subprocess.Popen(["sym-deluge ping " + str(nodenum)],stdout=subprocess.PIPE,shell = True)
-    (out,err) = proc.communicate()
-    #out += "\nPinged node number " + str(nodenum)
+    if nodenum==1:
+        proc1=subprocess.Popen(["tos-deluge serial@"+usb_path_base+":115200 -sr 0"],stdout=subprocess.PIPE,shell = True)
+        out1 = proc1.communicate()[0]
+    
+    proc=subprocess.Popen(["tos-deluge serial@"+usb_path_base+":115200 -pr "+str(nodenum)],stdout=subprocess.PIPE,shell = True)    
+    out=proc.communicate()[0]
 
     if "Command sent" in out:
         #out="\nPinged " + str(nodenum) + " successfully!"
         out = "Alive "
-            
     else:
         #out="\nPing of node no. " + str(nodenum) + " failed!"
         out = "Dead "
+
+    if nodenum==8:
+        subprocess.Popen(["tos-deluge serial@"+usb_path_base+":115200 -sr 1"],stdout=subprocess.PIPE,shell = True)
     return out
 
 def BaseStationDetails(imagenum):
@@ -101,12 +111,11 @@ def index():
 
 @app.route('/cluster_status/',methods=['POST'])
 def pingall():
-    cluster_status = []
-    for i in range (1,8):
-        cluster_status.append(isNodeAlive(i)) 
-
-    status = ''.join(cluster_status)
-    return status
+    status=[]
+    imagenum=request.form['data']
+    status.append(isNodeAlive(imagenum))
+    status.append(imagenum)
+    return json.dumps(status)
 
 @app.route('/ping/', methods=['POST'])
 def ping():
@@ -145,6 +154,9 @@ def switch():
 
 @app.route('/upload', methods=['POST'])
 def upload():
+    global imagepath,slotnum
+    slotnum=request.form['imagenumber']
+
     # Get the name of the uploaded file
     file = request.files['file']
     # Check if the file is one of the allowed types/extensions
@@ -152,22 +164,30 @@ def upload():
         # Make the filename safe, remove unsupported chars
         filename = secure_filename(file.filename)
         imagepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
         file.save(imagepath)
         #return redirect(url_for('uploaded_file',
         #                        filename=filename))
     
-    data1=uploadtomote(request.form['imagenumber'],imagepath)
+    # data1=uploadtomote(request.form['imagenumber'],imagepath)
     
     # thread = threading.Thread(target=uploadtomote,args=(request.form['imagenumber'],imagepath))
     # thread.start()
 
+    data1 = "Flash Initiated"
     global templateData
 
     templateData = {
-     'data':data1
+     'consoledata':data1
     }
     return redirect('/')
-	
+
+@app.route('/flashnode/', methods=['POST'])
+def flashnode():
+    global imagepath,slotnum
+    data1=uploadtomote(slotnum,imagepath)
+    return data1
+
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'],
@@ -183,7 +203,19 @@ def test_message():
     #print dataneed
     serial_socket()
 
-#stop listening
+@app.route('/savelog/',methods=['POST'])
+def savedata():
+    log_file=open(app.config['UPLOAD_FOLDER']+"log.txt","w+")
+    log_file.write(request.form['filedata'])
+    log_file.close()
+    headers = {"Content-Disposition":"attachment; filename=log.txt"}
+    with open("uploads/log.txt",'r') as f:
+        body=f.read()
+        return make_response((body,headers))
+    # return send_file(app.config['UPLOAD_FOLDER']+"log.txt",as_attachment=True)
+    #return "Done"
+    #stop listening
+
 @app.route('/stop/',methods=['POST'])
 def stop():
     global ser
@@ -197,19 +229,28 @@ def stop():
 
 @app.route('/ackreceived/',methods=['POST'])
 def ackreceived():
+    
     line=[]
     ser1=serial.Serial(port=usb_path_base,baudrate=115200)
     while True:
-        for c in ser1.read():
-            line.append(c.encode('hex'))
-            if c.encode('hex')=="7e":
-                if line.count('7e')==2:
-                    packet=''.join(line)
-                    if packet[24:30]=="003f53":
-                        print packet[22:24]
-                        ser1.close()
-                        return packet[22:24]
-                line=[]
+        try:
+            for c in ser1.read():
+                line.append(c.encode('hex'))
+                if c.encode('hex')=="7e":
+                    if line.count('7e')==2:
+                        packet=''.join(line)
+                        print packet
+
+                        if packet[24:30]=="003f53":
+                            print packet[22:24]
+                            ser1.close()
+                            return packet[22:24]
+                            line=[] 
+
+        except serial.serialutil.SerialException:
+            pass
+
+                
 
 
 if __name__ == '__main__':
