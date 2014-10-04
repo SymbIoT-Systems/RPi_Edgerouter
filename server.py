@@ -20,9 +20,11 @@ from time import sleep
 import subprocess
 from pyudev import Context, Monitor, MonitorObserver, Device
 import sys
+import json
 
 templateData = {
-    'data':"Nothing yet"
+    'consoledata':"Nothing yet",
+    'baseimagedata':"BaseStation offline"
 }
 
 #Ensure that the initial base path while launching the server is correct
@@ -83,11 +85,18 @@ def isNodeAlive(nodenum):
         out = "Dead "
     return out
 
+def BaseStationDetails(imagenum):
+    proc = subprocess.Popen(["tos-deluge serial@" +usb_path_base+":115200 -p "+str(imagenum)],stdout=subprocess.PIPE,shell = True)
+    (out,err) = proc.communicate()
+    if "ERROR" in out:
+        out = "BaseStation Disconnected!"
+    
+    return out
+
 
 #App routes         
 @app.route('/')
 def index():
-
     return render_template('main.html',**templateData)
 
 @app.route('/cluster_status/',methods=['POST'])
@@ -119,14 +128,18 @@ def ping():
 @app.route('/switch/', methods=['POST'])
 def switch():
     if request.method == "POST":
-        imagenum = request.form['imagenum']
-        proc = subprocess.Popen(["sym-deluge ping " + str(imagenum)],stdout=subprocess.PIPE,shell = True)
+        imagenum = request.form['imagenumberswitch']
+
+        proc = subprocess.Popen(["sym-deluge switch " + str(imagenum)],stdout=subprocess.PIPE,shell = True)
         (out,err) = proc.communicate()
         out += "\nSwitched to image number " + str(imagenum)
-        return out
-        
-    else:
-        return redirect('/')   
+        imageinfo = BaseStationDetails(imagenum)
+        templateData = {
+            'consoledata':out,
+            'baseimagedata':imageinfo
+        }
+
+        return json.dumps(templateData)   
 
 # Route that will process the file upload
 
@@ -198,16 +211,9 @@ def ackreceived():
                         return packet[22:24]
                 line=[]
 
-#USB auto-detection of BaseStation port and activities
-
-# @app.route('/automount',methods=['POST'])
-# def automount():
-#     if request.form['status']=="Added":
-#         port=request.form['port']
-#         global usb_path_base
-#         usb_path_base=port
-#         print port
-#     return "0"
 
 if __name__ == '__main__':
+    proc = subprocess.Popen(["python USBAutoDetect.py"],stdout=subprocess.PIPE,shell = True)
     socketio.run(app,host='0.0.0.0',port=8080)
+
+

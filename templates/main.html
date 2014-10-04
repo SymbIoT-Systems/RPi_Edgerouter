@@ -6,14 +6,35 @@
     <!-- Local stylesheet -->
     <link rel="stylesheet" type="text/css" href="static/style.css">
     
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-    </script>
+    <script src="static/jquery.min.js"></script>
     <script type="text/javascript" src="static/socket.io.js"></script>
 
     <script>
     $(document).ready(function(){
 
-      if ($("#consolebox").text().match("Nothing yet")) {//Flash Initiated
+      var data = [['NodeNum', 'Status', 'LastChecked','Ping' ]];
+
+      var html = '<table><tbody>';
+      for (var i = 0, len = 9; i < len; ++i) {
+        html += '<tr>';
+        for (var j = 0, rowLen = 4; j < rowLen; ++j ) {
+          if (i==0) {
+            html += '<td>' + data[i][j] + '</td>';
+          }else if(j==3){
+            html += '<td><button name="ping" id="ping" >Ping</button></td>';
+          }else{
+            html += '<td>dummy data</td>';
+          };
+          
+        }
+        html += "</tr>";
+        }
+      html += '</tbody></table>';
+
+      $(html).appendTo('#table1');
+
+
+      if ($("#consolebox").text().match("Flash Initiated")) {//Flash Initiated
         $("#noTrespassingAnimationG").show();
 
         setTimeout(function(){
@@ -30,7 +51,7 @@
     // });
       /*-------------------- EXPANDABLE PANELS ----------------------*/
         var panelspeed = 300; //panel animate speed in milliseconds
-        var totalpanels = 4; //total number of collapsible panels
+        var totalpanels = 3; //total number of collapsible panels
         var defaultopenpanel = 0; //leave 0 for no panel open
         var accordian = false; //set panels to behave like an accordian, with one panel only ever open at once      
  
@@ -133,8 +154,40 @@
         $("#listen").show();
         $("#stoplisten").hide();
       });
-    });
     
+     $("#formswitch").submit(function(event) {
+      $('#baseimage').html('<p>Switching to image number: ' + $('input[name=imagenumberswitch]:checked', '#formswitch').val() + '</p>......');
+      /* stop form from submitting normally */
+      event.preventDefault();
+
+      /* get some values from elements on the page: */
+      var $form = $( this ),
+          url = $form.attr('action');
+      /* Send the data using post */
+      var posting = $.post( url, { imagenumberswitch: $('input[name=imagenumberswitch]:checked', '#formswitch').val()} );
+      
+      
+      var interval=setInterval(function(){
+      {
+               
+      $('#baseimage').append('.');
+      }
+      },500
+     );
+
+        
+      
+      /* Alerts the results */
+      posting.done(function( data ) {
+        
+        clearInterval(interval);
+        data1=$.parseJSON(data);
+        $('#baseimage').html("</br>"+data1['baseimagedata'].replace(/\n/g, "<br/>"));
+        $('#consolebox').html(data1['consoledata'].replace(/\n/g, "<br/>"));
+      
+      });
+    });
+});
     </script>
   </head>
 
@@ -152,6 +205,7 @@
         </div>
 
         <div class="expandable-panel-content">
+        </br>
           Upload relevant tos_image.xml file 
           <br/>
           <br/>
@@ -161,6 +215,7 @@
             <input type="number" name="imagenumber" min="1" max="3" value="1">
             <input type="submit" value="Flash">
           </form>
+          </br>
           <div id="noTrespassingOuterBarG">
             <div id="noTrespassingFrontBarG" class="noTrespassingAnimationG">
               <div class="noTrespassingBarLineG">
@@ -176,57 +231,89 @@
             <div class="noTrespassingBarLineG">
             </div>
             </div>
+
             </div>
         </div>
       </div>
+
       <hr/>
 
       <!-- Ping remote nodes -->
       <div class="expandable-panel" id="cp-2">
         <div class="expandable-panel-heading">
-          <h2>Cluster Details<span class="icon-close-open"></span></h2>
+          <h2>Cluster Info<span class="icon-close-open"></span></h2>
         </div>
 
         <div class="expandable-panel-content">
+          <h4>Cluster Details:</h4>
+          <center>
+            
+          </br>
+          </br>
+          <div id="table1" class="CSSTableGenerator"></div>
+          </br>
+          </br>
         Ping Node number:
         <input type="number" id="quantity" name="quantity" min="2" max="10" value="2">
         <button name="ping" id="ping" >Ping</button>
+        </center>
+        </br>
+        </br>
+        <h4>Basestation Details:</h4>
+        <p>
+          <!-- Status: -->
+          <center><div class="baseimagebox" id="baseimage">
+          </br>
+            {{baseimagedata}}
+
+          </div></center>
+          <!-- Data coming from tos-deluge -p of basestation -->
+
+        <!-- Switch images on all remote nodes -->
+        </br>
+        Please select image number to switch to:
+        <!-- <input type="number" id="imagenumber" name="imagenumber" min="1" max="3" value="1"> 
+        <button name="switch" id="switch" >Switch</button>-->
+
+       <form action="switch/" id="formswitch" name="formswitch">
+          <input type="radio" name="imagenumberswitch" value="1" checked>Slot 1<br>
+          <input type="radio" name="imagenumberswitch" value="2">Slot 2<br>
+          <input type="radio" name="imagenumberswitch" value="3">Slot 3<br>
+          <input type="submit" value="Switch">
+        </form>
+      </br>
+        <!-- <button name="switch" id="switch" >Switch</button> -->
+        </br>
+        </br>
         </div>
       </div>
       <hr/>
 
-      <!-- Switch images on all remote nodes -->
-      <div class="expandable-panel" id="cp-3">
-        <div class="expandable-panel-heading">
-          <h2>Code Details<span class="icon-close-open"></span></h2>
-        </div>
-
-        <div class="expandable-panel-content">        
-        Please select image number to switch to:
-        <input type="number" id="imagenumber" name="imagenumber" min="1" max="3" value="1">
-        <button name="switch" id="switch" >Switch</button>
-        </div>
-      </div>      
-      <hr/>
-
+      
       <!-- Run Packet Sniffer on Basestation  -->
-      <div class="expandable-panel" id="cp-4">
+      <div class="expandable-panel" id="cp-3">
         <div class="expandable-panel-heading">
           <h2>Packet Sniffer<span class="icon-close-open"></span></h2>
         </div>
 
         <div class="expandable-panel-content">
+        </br>
           Start the sniffer:
           <button name="listen" id="listen" >Listen</button>
           <button name="stoplisten" id="stoplisten" >Stop Listen</button>
+          </br>
+          <input type="checkbox" name="logfile" value="log"> Log data to file<br>
+          </br>
+          
+
         </div>
       </div>
       
       </br>
       </br>
 
-      <div class="console" id="consolebox" style="overflow:scroll; height:200px;">
-        {{data}}
+      <div class="console" id="consolebox" style="overflow:scroll; height:350px;">
+        {{consoledata}}
       </div>
       </br>
       </br>
