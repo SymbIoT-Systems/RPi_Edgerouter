@@ -46,24 +46,23 @@
 
       $(html).appendTo('#table1');
 
-
-      if ($("#consolebox").text().match("Flash Initiated")) {
-        $("#noTrespassingAnimationG").show();
-
+      var flash="no";
+      if ($("#consolebox").text().match("Flash Initiated")) {//Flash Initiated
+        flash="yes";
         // setTimeout(function(){
         //   $.post("/ackreceived/",{data:'1'},function(result,status){
         //   alert(result);
         //  });
         // }, 90000);
       $.post("/flashnode/",function(result, status){
-        $("#consolebox").append(result.replace(/\n/g, "<br/>"));
+        $("#consolebox").append(result.replace(/\n/g, "</br>"));
         $.post("/ackreceived/",{data:'1'},function(result,status){
           alert(result);
          });
       });
       }
       else{
-        $("#noTrespassingOuterBarG").hide();
+        $("#bar").hide();
       };
 
       $("#ping").prop("disabled",true);
@@ -120,6 +119,9 @@
                 obj.stop();
                 obj.prev().find('.icon-close-open').css('background-position', '0px -'+iconheight+'px');
                 obj.animate({'margin-top':0}, panelspeed);
+                if (currentpanel==1 && flash==="yes") {
+                  $("#bar").show();
+                };
                 if (highlightopen == true) {
                     $('#cp-'+currentpanel + ' .expandable-panel-heading').addClass('header-active');
                 }
@@ -128,6 +130,9 @@
                 obj.stop();
                 obj.prev().find('.icon-close-open').css('background-position', '0px 0px');
                 obj.animate({'margin-top':(panelheight[objid]*-1)}, panelspeed);
+                if (currentpanel==1) {
+                  $("#bar").hide();
+                };
                 if (highlightopen == true) {
                     $('#cp-'+currentpanel + ' .expandable-panel-heading').removeClass('header-active');
                 }
@@ -218,15 +223,15 @@
         
         clearInterval(interval);
         data1=$.parseJSON(data);
-        $('#baseimage').html("</br>"+data1['baseimagedata'].replace(/\n/g, "<br/>"));
-        $('#consolebox').html(data1['consoledata'].replace(/\n/g, "<br/>"));
+        $('#baseimage').html("</br>"+data1['baseimagedata'].replace(/\n/g, "</br>"));
+        $('#consolebox').html(data1['consoledata'].replace(/\n/g, "</br>"));
       
       });
     });
-
+    var time = new Date($.now());
     $("#logfile").click(function(){
-      $.post("/savelog/",{filedata:$("#consolebox").html()},function (result,status) {
-        //alert(result);
+      $.post("/savelog/",{filedata:$("#consolebox").html(),filename:time},function(result,status){
+         window.location.href = 'uploads/'+time;
       });
     });
 });
@@ -249,32 +254,18 @@
         <div class="expandable-panel-content">
         </br>
           Upload relevant tos_image.xml file 
-          <br/>
-          <br/>
+          </br>
+          </br>
           <form action="upload" method="post" enctype="multipart/form-data">
-            <input type="file" name="file"><br/>
+            <input type="file" name="file"></br>
             Choose slot number:
             <input type="number" name="imagenumber" min="1" max="3" value="1">
             <input type="submit" value="Flash">
           </form>
           </br>
-          <div id="noTrespassingOuterBarG">
-            <div id="noTrespassingFrontBarG" class="noTrespassingAnimationG">
-              <div class="noTrespassingBarLineG">
-            </div>
-            <div class="noTrespassingBarLineG">
-            </div>
-            <div class="noTrespassingBarLineG">
-            </div>
-            <div class="noTrespassingBarLineG">
-            </div>
-            <div class="noTrespassingBarLineG">
-            </div>
-            <div class="noTrespassingBarLineG">
-            </div>
-            </div>
+          
+          <div class="bar" id="bar"></div>
 
-            </div>
         </div>
       </div>
 
@@ -318,9 +309,9 @@
 
        <form action="switch/" id="formswitch" name="formswitch">
        </br>
-          <input type="radio" name="imagenumberswitch" value="1" checked>Slot 1<br>
-          <input type="radio" name="imagenumberswitch" value="2">Slot 2<br>
-          <input type="radio" name="imagenumberswitch" value="3">Slot 3<br>
+          <input type="radio" name="imagenumberswitch" value="1" checked>Slot 1</br>
+          <input type="radio" name="imagenumberswitch" value="2">Slot 2</br>
+          <input type="radio" name="imagenumberswitch" value="3">Slot 3</br>
         </br>
           <input type="submit" value="Switch">
         </form>
@@ -347,6 +338,7 @@
           </br>
           </br>
           <button id="logfile"> Download data to file</button>
+          </br>
           </br>
         </div>
       </div>

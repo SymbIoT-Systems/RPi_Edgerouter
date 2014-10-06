@@ -74,108 +74,74 @@ h2, p, ol, ul, li {
 	padding: 10px;
 }
 
-#noTrespassingOuterBarG{
-height:30px;
-width:240px;
-border:2px solid #66FF00;
-overflow:hidden;
-background-color:#57CF06}
-
-.noTrespassingBarLineG{
-background-color:#66FF00;
-float:left;
-width:21px;
-height:180px;
-margin-right:36px;
-margin-top:-42px;
--moz-transform:rotate(45deg);
--webkit-transform:rotate(45deg);
--ms-transform:rotate(45deg);
--o-transform:rotate(45deg);
-transform:rotate(45deg);
+.bar {
+    /**
+     * The loading bar is centered both vertically and horizontally using
+     * top: 50%; and left: 50%; and then pulling it back using negative margins.
+     */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: 20px;
+    width: 200px;
+    margin-top: -10px; /* half the height */
+    margin-left: -100px; /* half the width */
+    background-image: -webkit-linear-gradient(-45deg, #ff9a1a 25%, rgba(255, 154, 26, 0) 25%, rgba(255, 154, 26, 0) 50%, #ff9a1a 50%, #ff9a1a 75%, rgba(255, 154, 26, 0) 75%);
+    background-image: -moz-linear-gradient(-45deg, #ff9a1a 25%, rgba(255, 154, 26, 0) 25%, rgba(255, 154, 26, 0) 50%, #ff9a1a 50%, #ff9a1a 75%, rgba(255, 154, 26, 0) 75%);
+    background-image: -o-linear-gradient(-45deg, #ff9a1a 25%, rgba(255, 154, 26, 0) 25%, rgba(255, 154, 26, 0) 50%, #ff9a1a 50%, #ff9a1a 75%, rgba(255, 154, 26, 0) 75%);
+    background-image: linear-gradient(-45deg, #ff9a1a 25%, rgba(255, 154, 26, 0) 25%, rgba(255, 154, 26, 0) 50%, #ff9a1a 50%, #ff9a1a 75%, rgba(255, 154, 26, 0) 75%);
+    background-color: #d3d3d3;
+    background-size: 50px 50px;
+    border: 1px solid #ff9a1a;
+    border-bottom-color: #e68100;
+    border-radius: 20px;
+    -webkit-box-shadow: inset 0 10px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 10px 0 rgba(255, 255, 255, 0.2);
+    -webkit-animation: move 2s linear infinite;
+    -moz-animation: move 2s linear infinite;
+    -o-animation: move 2s linear infinite;
+    animation: move 2s linear infinite;
 }
 
-.noTrespassingAnimationG{
-width:354px;
--moz-animation-name:noTrespassingAnimationG;
--moz-animation-duration:1s;
--moz-animation-iteration-count:infinite;
--moz-animation-timing-function:linear;
--webkit-animation-name:noTrespassingAnimationG;
--webkit-animation-duration:1s;
--webkit-animation-iteration-count:infinite;
--webkit-animation-timing-function:linear;
--ms-animation-name:noTrespassingAnimationG;
--ms-animation-duration:1s;
--ms-animation-iteration-count:infinite;
--ms-animation-timing-function:linear;
--o-animation-name:noTrespassingAnimationG;
--o-animation-duration:1s;
--o-animation-iteration-count:infinite;
--o-animation-timing-function:linear;
-animation-name:noTrespassingAnimationG;
-animation-duration:1s;
-animation-iteration-count:infinite;
-animation-timing-function:linear;
+/**
+ * The ::before element creates the darker box around the loading bar itself.
+ */
+
+/*.bar::before {
+    content: " ";
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    background-color: #000;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    -webkit-box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03), inset 0 1px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03), inset 0 1px 0 rgba(0, 0, 0, 0.1);
+    z-index: -1;
+}*/
+
+/**
+ * Animate the stripes.
+ */
+
+@-webkit-keyframes move {
+    to { background-position: 50px 50px; }
 }
 
-#noTrespassingFrontBarG{
+@-moz-keyframes move {
+    to { background-position: 50px 50px; }
 }
 
-@-moz-keyframes noTrespassingAnimationG{
-0%{
-margin-left:-57px;
+@-o-keyframes move {
+    to { background-position: 50px 50px; }
 }
 
-100%{
-margin-left:0px;
+@-webkit-keyframes move {
+    to { background-position: 50px 50px; }
 }
 
-}
-
-@-webkit-keyframes noTrespassingAnimationG{
-0%{
-margin-left:-57px;
-}
-
-100%{
-margin-left:0px;
-}
-
-}
-
-@-ms-keyframes noTrespassingAnimationG{
-0%{
-margin-left:-57px;
-}
-
-100%{
-margin-left:0px;
-}
-
-}
-
-@-o-keyframes noTrespassingAnimationG{
-0%{
-margin-left:-57px;
-}
-
-100%{
-margin-left:0px;
-}
-
-}
-
-@keyframes noTrespassingAnimationG{
-0%{
-margin-left:-57px;
-}
-
-100%{
-margin-left:0px;
-}
-
-}
 
 /*Table Settings*/
 .CSSTableGenerator {

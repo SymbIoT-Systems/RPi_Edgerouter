@@ -190,8 +190,8 @@ def flashnode():
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'],
-                               filename)
+	return send_from_directory(app.config['UPLOAD_FOLDER'],
+                               filename,as_attachment=True)
 
 @socketio.on('listen',namespace='/test')
 def test_message():
@@ -205,14 +205,18 @@ def test_message():
 
 @app.route('/savelog/',methods=['POST'])
 def savedata():
-    log_file=open(app.config['UPLOAD_FOLDER']+"log.txt","w+")
+    log_file=open(app.config['UPLOAD_FOLDER']+request.form['filename'],"w")
     log_file.write(request.form['filedata'])
     log_file.close()
-    headers = {"Content-Disposition":"attachment; filename=log.txt"}
-    with open("uploads/log.txt",'r') as f:
-        body=f.read()
-        return make_response((body,headers))
-    # return send_file(app.config['UPLOAD_FOLDER']+"log.txt",as_attachment=True)
+    #return redirect(url_for('uploaded_file',filename="log.txt"))
+    return "Uploaded"
+
+
+    # headers = {"Content-Disposition":"attachment; filename=log.txt"}
+    # with open("uploads/log.txt",'r') as f:
+    #     body=f.read()
+    #     return make_response((body,headers))
+    # # return send_file(app.config['UPLOAD_FOLDER']+"log.txt",as_attachment=True)
     #return "Done"
     #stop listening
 
