@@ -2,9 +2,12 @@ from pyudev import Context, Monitor, MonitorObserver, Device
 from time import sleep
 import sys
 import subprocess 
+import os
 
 from requests import Session
 session = Session()
+
+port1 = "8080"
 
 #device1 = Device.from_device_file(context,'/dev/ttyUSB1')
 
@@ -18,16 +21,16 @@ def print_device_event(device):
 		#print dev
 		out = out[dev:dev+12]
 		print "\n"+out
-
+		os.environ["motepath"]=out
 		# session.head('http://localhost:5000/automount')
 
-		response = session.post(
-		url='http://localhost:5000/automount',
-		data={
-		'port':out,
-		'status':'Added'
-		}
-		)
+		# response = session.post(
+		# url='http://localhost:'+port1+'/automount',
+		# data={
+		# 'port':out,
+		# 'status':'Added'
+		# }
+		# )
 
 
 
@@ -35,13 +38,13 @@ def print_device_event(device):
 		print "\nDevice Removed\n"
 		# session.head('http://localhost:5000/automount')
 
-		response = session.post(
-		url='http://localhost:5000/automount',
-		data={
-		'port':'null',
-		'status':'Removed'
-		}
-		)
+		# response = session.post(
+		# url='http://localhost:'+port1+'/automount',
+		# data={
+		# 'port':'null',
+		# 'status':'Removed'
+		# }
+		# )
 
 def initialize():
 	context = Context()
