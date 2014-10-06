@@ -33,7 +33,23 @@ slotnum = 1
 imagepath = "uploads/"
 
 #Ensure that the initial base path while launching the server is correct
-usb_path_base = os.getenv('motepath', "/dev/ttyUSB0")
+usb_path_base = os.getenv('motepath')
+if usb_path_base is None:
+    usb_path_base="/dev/ttyUSB0"
+    #global templateData
+    templateData['consoledata'] = "BaseStation disconnected"
+    # templateData = {
+    # 'consoledata':"Basestation Disconnected",
+    # 'baseimagedata':"Basestation Disconnected"
+    # }
+else:
+    templateData['consoledata'] = "BaseStation connected at "+ usb_path_base
+    # templateData = {
+    # 'consoledata':"Basestation connected at "+ usb_path_base,
+    # 'baseimagedata':"Basestation connected at "+ usb_path_base
+    # }
+
+
 
 # Initialize the Flask application
 app = Flask(__name__)
