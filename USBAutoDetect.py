@@ -21,7 +21,10 @@ def print_device_event(device):
 		#print dev
 		out = out[dev:dev+12]
 		print "\n"+out
-		os.environ["motepath"]=out
+		usb_status_file=open("usb_status","w+")
+		usb_status_file.write(out)
+		usb_status_file.close()
+		#os.environ["motepath"]=out
 		# session.head('http://localhost:5000/automount')
 
 		# response = session.post(
@@ -36,6 +39,9 @@ def print_device_event(device):
 
 	elif device.action == 'remove':
 		print "\nDevice Removed\n"
+		usb_status_file=open("usb_status","w+")
+		usb_status_file.write("")
+		usb_status_file.close()
 		# session.head('http://localhost:5000/automount')
 
 		# response = session.post(
@@ -72,6 +78,7 @@ while True:
 # 		print "\n"
 # 		sys.exit(0)
 
+
 if __name__ == "__main__":
 	print "\nModule is being run directly\n"
 
@@ -85,3 +92,13 @@ if __name__ == "__main__":
 # print "\nDevice added"
 # print device1.tags
 
+#Ensure that the initial base path while launching the server is correct
+proc = subprocess.Popen(['motelist'],stdout=subprocess.PIPE,shell=True)
+(out,err) = proc.communicate()
+dev = out.find("/dev/ttyUSB")
+#print dev
+out = out[dev:dev+12]
+# print "\n"+out
+usb_status_file=open("usb_status","w+")
+usb_status_file.write(out)
+usb_status_file.close()

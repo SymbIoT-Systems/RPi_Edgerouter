@@ -83,7 +83,7 @@ h2, p, ol, ul, li {
     top: 50%;
     left: 50%;
     height: 20px;
-    width: 200px;
+    width: 400px;
     margin-top: -10px; /* half the height */
     margin-left: -100px; /* half the width */
     background-image: -webkit-linear-gradient(-45deg, #ff9a1a 25%, rgba(255, 154, 26, 0) 25%, rgba(255, 154, 26, 0) 50%, #ff9a1a 50%, #ff9a1a 75%, rgba(255, 154, 26, 0) 75%);

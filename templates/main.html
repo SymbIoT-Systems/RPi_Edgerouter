@@ -54,7 +54,7 @@
       $(html).appendTo('#table1');
 
       
-      if ($("#consolebox").text().match("Flash Initiated")) {//Flash Initiated
+      if ($("#consolebox").text().indexOf("Flash Initiated")>=0) {//Flash Initiated
         // Once flash initiated:
         //Disable all buttons...trust me...it's for their own good..
         $("#FlashButton").prop("disabled",true);
@@ -67,8 +67,9 @@
         
 
 
-      $.post("/flashnode/",function(result, status){
+      $.post("/flashnode/",{data:'1'},function(result, status){
         $("#consolebox").append(result.replace(/\n/g, "</br>"));
+
         $.post("/ackreceived/",{data:'1'},function(result,status){
           alert("Node no."+result+" flashed succesfully!");
           $("#bar").hide();
@@ -84,7 +85,7 @@
       }
       else{
         $("#bar").hide();
-      };
+      }
 
       $("#ping").prop("disabled",true);
       function isclusteralive (argument) {
@@ -103,7 +104,7 @@
         ,5000);
       }
 
-      // isclusteralive();
+      isclusteralive();
       /*-------------------- EXPANDABLE PANELS ----------------------*/
         var panelspeed = 300; //panel animate speed in milliseconds
         var totalpanels = 3; //total number of collapsible panels
@@ -183,13 +184,13 @@
       $('#consolebox').scrollTop($('#consolebox')[0].scrollHeight);
       });
 
-      $("#switch").click(function(){
-      var imagenum=$("#imagenumber").val();
+      //  $("#switch").click(function(){
+      //  var imagenum=$("#imagenumber").val();
       
-      $.post("/switch/",{imagenum:imagenum},function(result,status){
-        alert(result);
-        });
-      });
+      // $.post("/switch/",{imagenum:imagenum},function(result,status){
+      //   alert(result);
+      //   });
+      // });
 
       $("#ping").click(function(){
         for (var i = 1; i < 9; i++) {
@@ -243,10 +244,10 @@
       
       });
     });
-    var time = new Date($.now());
+    var time = $.now();
     $("#logfile").click(function(){
-      $.post("/savelog/",{filedata:$("#consolebox").html(),filename:time},function(result,status){
-         window.location.href = 'uploads/'+time;
+      $.post("/savelog/",{filedata:$("#consolebox").html(),filename:"log-"+time+".txt"},function(result,status){
+         window.location.href = 'uploads/log-'+time+".txt";
       });
     });
 });
