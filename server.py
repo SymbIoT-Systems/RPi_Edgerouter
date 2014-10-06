@@ -237,22 +237,24 @@ def ackreceived():
     line=[]
     ser1=serial.Serial(port=usb_path_base,baudrate=115200)
     while True:
-        try:
-            for c in ser1.read():
-                line.append(c.encode('hex'))
-                if c.encode('hex')=="7e":
-                    if line.count('7e')==2:
-                        packet=''.join(line)
-                        print packet
+        # try:
+        for c in ser1.read():
+            line.append(c.encode('hex'))
+            if c.encode('hex')=="7e":
+                if line.count('7e')==2:
+                    packet=''.join(line)
+                    print packet
 
-                        if packet[24:30]=="003f53":
-                            print packet[22:24]
-                            ser1.close()
-                            return packet[22:24]
-                            line=[] 
+                    if packet[24:30]=="003f53":
+                        print packet[22:24]
+                        ser1.close()
+                        templateData['consoledata']="Nothing yet"
+                        return packet[22:24]
+                    line=[] 
+                    packet=""
 
-        except serial.serialutil.SerialException:
-            pass
+        # except serial.serialutil.SerialException:
+        #     pass
 
                 
 
