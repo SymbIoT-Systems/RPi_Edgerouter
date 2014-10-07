@@ -216,6 +216,19 @@ def uploaded_file(filename):
 	return send_from_directory(app.config['UPLOAD_FOLDER'],
                                filename,as_attachment=True)
 
+@app.route('/start/',methods=['POST'])
+def start():
+    basepathdetect()
+    global ser
+    ser=serial.Serial(port=usb_path_base,baudrate=115200)
+    #subprocess.call(["tos-deluge serial@"+usb_path_base+":115200 -sr 1"],shell=True)
+    global dataneed
+    dataneed=True
+    #print dataneed
+    serial_socket()
+    #return "Listen Start Done"    
+
+
 @socketio.on('listen',namespace='/test')
 def test_message():
     basepathdetect()
@@ -253,8 +266,9 @@ def stop():
     global ser
     global dataneed
     dataneed=False
+
+    # ser.flushInput()
     ser.close()
-	
 	#print dataneed
     return "0"
 
