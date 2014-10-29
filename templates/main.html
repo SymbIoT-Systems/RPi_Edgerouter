@@ -5,12 +5,14 @@
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
           rel="stylesheet">
     <!-- Local stylesheet -->
-    
     <link rel="stylesheet" type="text/css" href="static/style.css">
     
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
     <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+    
     <script>
+    
+    //Check if no file selected while user tries to upload an image
     function validateForm() {
         var x = document.forms["uploadform"]["FileButton"].value;
         if (x==null || x=="") {
@@ -18,13 +20,11 @@
             return false;
         }
     }
-    </script>
-    <script>
+    
     $(document).ready(function(){
-
-
+      
+      //Table for Cluster Status
       var titledata = [['NodeNum', 'Status',]];
-
       var html = '<table><tbody>';
       for (var i = 0, rowNum = 9; i < rowNum; ++i) {
         html += '<tr>';
@@ -32,30 +32,24 @@
           if (i==0) {
             html += '<td>' + titledata[i][j] + '</td>';
           }
-
           else if(j==0){
             html+= '<td>'+ i + '</td>';
           }
           else if (j==1){
             html += '<td id="status'+i+'">Checking....</td>';
           }
-          // else if(j==2){
-          //   html += '<td><button name="ping" id="ping" >Ping</button></td>';
-          // }
-
           else{
             html += '<td>dummy data</td>';
           };
-          
         }
         html += "</tr>";
         }
       html += '</tbody></table>';
-
       $(html).appendTo('#table1');
-
       
-      if ($("#consolebox").text().indexOf("Flash Initiated")>=0) {//Flash Initiated
+      //Flash Initiated
+      if ($("#consolebox").text().indexOf("Flash Initiated")>=0) 
+      {
         // Once flash initiated:
         //Disable all buttons...trust me...it's for their own good..
         $("#FlashButton").prop("disabled",true);
@@ -66,8 +60,6 @@
         $("#logfile").prop("disabled",true);
         $("#FileButton").prop("disabled",true);
         
-
-
       $.post("/flashnode/",{data:'1'},function(result, status){
         $("#consolebox").append(result.replace(/\n/g, "</br>"));
 
@@ -179,20 +171,11 @@
         }); //END LOAD
 
       var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
-      //var socket = io.connect('http://192.168.137.102:5000/test');
       $("#stoplisten").hide();
       socket.on('my response', function(msg) {
       $('#consolebox').append('<p>Received: ' + msg.data + '</p>');
       $('#consolebox').scrollTop($('#consolebox')[0].scrollHeight);
       });
-
-      //  $("#switch").click(function(){
-      //  var imagenum=$("#imagenumber").val();
-      
-      // $.post("/switch/",{imagenum:imagenum},function(result,status){
-      //   alert(result);
-      //   });
-      // });
 
       $("#ping").click(function(){
         for (var i = 1; i < 9; i++) {
@@ -203,7 +186,6 @@
       });
 
       $("#listen").click(function(){
-        // socket.emit('listen');
         $.post( "/start/",{data:'1'});
         $("#stoplisten").show();
         $("#listen").hide();
@@ -219,34 +201,27 @@
       $('#baseimage').html('<p>Switching to image number: ' + $('input[name=imagenumberswitch]:checked', '#formswitch').val() + '</p>......');
       /* stop form from submitting normally */
       event.preventDefault();
-
       /* get some values from elements on the page: */
       var $form = $( this ),
           url = $form.attr('action');
       /* Send the data using post */
       var posting = $.post( url, { imagenumberswitch: $('input[name=imagenumberswitch]:checked', '#formswitch').val()} );
-      
-      
-      var interval=setInterval(function(){
-      {
-               
-      $('#baseimage').append('.');
-      }
-      },500
-     );
-
-        
-      
+      var interval = setInterval(function() {
+          {
+           $('#baseimage').append('.');
+          }
+        },500
+      );
       /* Alerts the results */
       posting.done(function( data ) {
-        
         clearInterval(interval);
         data1=$.parseJSON(data);
         $('#baseimage').html("</br>"+data1['baseimagedata'].replace(/\n/g, "</br>"));
         $('#consolebox').html(data1['consoledata'].replace(/\n/g, "</br>"));
-      
       });
     });
+    
+    // Setting the filename for the listen logfile according to time
     var time = $.now();
     $("#logfile").click(function(){
       $.post("/savelog/",{filedata:$("#consolebox").html(),filename:"log-"+time+".txt"},function(result,status){
@@ -305,7 +280,7 @@
           <div id="table1" class="CSSTableGenerator"></div>
           </br>
           </br>
-        <!-- <input type="number" id="quantity" name="quantity" min="2" max="10" value="2"> -->
+      
         <button name="ping" id="ping">Ping All Nodes</button>
         </center>
         </br>
@@ -318,14 +293,11 @@
           </br>
             {{baseimagedata}}
           </div>
-          <!-- Data coming from tos-deluge -p of basestation -->
+        <!-- Data coming from tos-deluge -p of basestation -->
 
         <!-- Switch images on all remote nodes -->
         </br>
         Please select image number to switch to:
-        <!-- <input type="number" id="imagenumber" name="imagenumber" min="1" max="3" value="1"> 
-        <button name="switch" id="switch" >Switch</button>-->
-
        <form action="switch/" id="formswitch" name="formswitch">
        </br>
           <input type="radio" name="imagenumberswitch" value="1" checked>Slot 1</br>
@@ -336,8 +308,7 @@
         </form>
         </center>
       </br>
-        <!-- <button name="switch" id="switch" >Switch</button> -->
-        </br>
+      </br>
         </div>
       </div>
       <hr/>
