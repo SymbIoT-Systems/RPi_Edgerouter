@@ -2,13 +2,12 @@
 Web application to interact with the WSN Testbed. 
 Features:
 
-1.Ping selective nodes
+1.Ping all nodes
 2.Upload tos_image.xml files
-3.Listen mode: Basestation sniffer? Show output in a console online --DONE!
-4.Switch images on all nodes --DONE!
-5.Detect a basestation plugged into laptop 
-6.Read basestation's contents in the eeprom slots (later)
-
+3.Listen mode: Basestation sniffer and show output in a console online
+4.Switch images on all nodes and show image details of current slot after switching
+5.Detect changes in port,status of basestation plugged into laptop
+6.Read basestation's contents in the eeprom slots
 '''
 
 import os
