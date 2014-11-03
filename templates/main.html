@@ -60,7 +60,8 @@
       $(html).appendTo('#table1');
       
       //Flash Initiated
-      if ($("#consolebox").text().indexOf("Flash Initiated")>=0) 
+      // if ($("#consolebox").text().indexOf("Flash Initiated")>=0)
+      if (({{flashstarted}}).indexOf("True")>=0) 
       {
         // Once flash initiated:
         //Disable all buttons...trust me...it's for their own good..

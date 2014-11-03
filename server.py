@@ -25,7 +25,8 @@ import json
 
 templateData = {
     'consoledata':"Nothing yet"+"\n",
-    'baseimagedata':"BaseStation offline"+"\n"
+    'baseimagedata':"BaseStation offline"+"\n",
+    'flashstarted' : "False"
 }
 
 slotnum = 1
@@ -159,9 +160,8 @@ def upload():
         imagepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(imagepath)
 
-    data1 = "Flash Initiated"
     global templateData
-    templateData['consoledata']+="Flash Initiated"+"\n"
+    templateData['flashstarted']="True"
     return redirect('/')
 
 @app.route('/uploads/<filename>')
@@ -172,8 +172,9 @@ def uploaded_file(filename):
 @app.route('/flashnode/', methods=['POST'])
 def flashnode():
     global imagepath,slotnum
-    data1=uploadtomote(slotnum,imagepath)
-    return data1
+    reply=uploadtomote(slotnum,imagepath)
+    templateData['flashstarted']="False"
+    return reply
 
 @app.route('/startlisten/',methods=['POST'])
 def startlisten():
