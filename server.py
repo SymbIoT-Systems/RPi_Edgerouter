@@ -42,7 +42,7 @@ app.config['ALLOWED_EXTENSIONS'] = set(['xml'])
 #Packet sniffing
 app.config['SECRET_KEY']="secret!"
 socketio=SocketIO(app)
-dataneed=False
+listenrequest=False
 
 #Function Definitions
 # For a given file, return whether it's an allowed type or not
@@ -55,21 +55,17 @@ def uploadtomote(slotnum,imgpath):
     print "Uploading to slot number "+slotnum
     proc = subprocess.Popen(["sym-deluge flash " + slotnum + " "  + imgpath], stdout=subprocess.PIPE,shell=True)
     (out,err) = proc.communicate()
-    #out=proc.stdout.read()upl
     return out
-    #print out 
-
 
 def serial_socket():
 	line=[]
-	while dataneed:
-		if dataneed==True:
+	while listenrequest:
+		if listenrequest==True:
 			for c in ser.read():
 				line.append(c.encode('hex'))
 				if c.encode('hex')=="7e":
 					if line.count('7e')==2:
-						#print (''.join(line))
-						socketio.emit('my response',{'data':''.join(line)},namespace='/test')
+						socketio.emit('my response',{'data':''.join(line)},namespace='/listen')
 						line=[]
 
 def isNodeAlive(nodenum):
@@ -77,7 +73,8 @@ def isNodeAlive(nodenum):
         proc1=subprocess.Popen(["tos-deluge serial@"+usb_path_base+":115200 -sr 0"],stdout=subprocess.PIPE,shell = True)
         out1 = proc1.communicate()[0]
     
-    proc=subprocess.Popen(["tos-deluge serial@"+usb_path_base+":115200 -pr "+str(nodenum)],stdout=subprocess.PIPE,shell = True)    
+    #proc=subprocess.Popen(["tos-deluge serial@"+usb_path_base+":115200 -pr "+str(nodenum)],stdout=subprocess.PIPE,shell = True)
+    proc=subprocess.Popen(["sym-deluge ping "+str(nodenum)],stdout=subprocess.PIPE,shell = True)
     out=proc.communicate()[0]
 
     if "Command sent" in out:
@@ -111,17 +108,9 @@ def basepathdetect():
         global templateData
         templateData['consoledata']+="Basestation Disconnected\n"
         templateData['baseimagedata']="Basestation Disconnected\n"
-        # templateData = {
-        # 'consoledata':"Basestation Disconnected",
-        # 'baseimagedata':"Basestation Disconnected"
-        # }
     else:
         templateData['consoledata']+="Basestation connected at "+ usb_path_base+"\n"
         templateData['baseimagedata']="Basestation connected at "+ usb_path_base+"\n"
-        # templateData = {
-        # 'consoledata':"Basestation connected at "+ usb_path_base,
-        # 'baseimagedata':"Basestation connected at "+ usb_path_base
-        # }
 
 #App routes         
 @app.route('/')
@@ -137,23 +126,6 @@ def pingall():
     status.append(isNodeAlive(imagenum))
     status.append(imagenum)
     return json.dumps(status)
-
-@app.route('/ping/', methods=['POST'])
-def ping():
-    if request.method == "POST":
-        nodenum = request.form['nodenum']
-        proc = subprocess.Popen(["sym-deluge ping " + str(nodenum)],stdout=subprocess.PIPE,shell = True)
-        (out,err) = proc.communicate()
-        out += "\nPinged node number " + str(nodenum)
-        if "Command sent" in out:
-            out="\nPinged " + str(nodenum) + " successfully!"
-            #print out
-        else:
-            out="\nPing of node no. " + str(nodenum) + " failed!"
-        return out
-    else:
-        return redirect('/')    
-
     
 @app.route('/switch/', methods=['POST'])
 def switch():
@@ -165,15 +137,13 @@ def switch():
         (out,err) = proc.communicate()
         out += "\nSwitched to image number " + str(imagenum)
         imageinfo = BaseStationDetails(imagenum)
-        templateData = {
+        switchData = {
             'consoledata':out,
             'baseimagedata':imageinfo
         }
-
-        return json.dumps(templateData)   
+        return json.dumps(switchData)   
 
 # Route that will process the file upload
-
 @app.route('/upload', methods=['POST'])
 def upload():
     global imagepath,slotnum
@@ -186,23 +156,17 @@ def upload():
         # Make the filename safe, remove unsupported chars
         filename = secure_filename(file.filename)
         imagepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
         file.save(imagepath)
-        #return redirect(url_for('uploaded_file',
-        #                        filename=filename))
-    
-    # data1=uploadtomote(request.form['imagenumber'],imagepath)
-    
-    # thread = threading.Thread(target=uploadtomote,args=(request.form['imagenumber'],imagepath))
-    # thread.start()
 
     data1 = "Flash Initiated"
     global templateData
     templateData['consoledata']+="Flash Initiated"+"\n"
-    # templateData = {
-    #  'consoledata':data1
-    # }
     return redirect('/')
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'],
+                               filename,as_attachment=True)
 
 @app.route('/flashnode/', methods=['POST'])
 def flashnode():
@@ -210,33 +174,25 @@ def flashnode():
     data1=uploadtomote(slotnum,imagepath)
     return data1
 
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-	return send_from_directory(app.config['UPLOAD_FOLDER'],
-                               filename,as_attachment=True)
-
-@app.route('/start/',methods=['POST'])
-def start():
+@app.route('/startlisten/',methods=['POST'])
+def startlisten():
     basepathdetect()
     global ser
     ser=serial.Serial(port=usb_path_base,baudrate=115200)
-    #subprocess.call(["tos-deluge serial@"+usb_path_base+":115200 -sr 1"],shell=True)
-    global dataneed
-    dataneed=True
-    #print dataneed
+    global listenrequest
+    listenrequest=True
     serial_socket()
     #return "Listen Start Done"    
 
 
-@socketio.on('listen',namespace='/test')
+@socketio.on('listen',namespace='/listen')
 def test_message():
     basepathdetect()
     global ser
     ser=serial.Serial(port=usb_path_base,baudrate=115200)
     subprocess.call(["tos-deluge serial@"+usb_path_base+":115200 -sr 1"],shell=True)
-    global dataneed
-    dataneed=True
-    #print dataneed
+    global listenrequest
+    listenrequest=True
     serial_socket()
 
 @app.route('/savelog/',methods=['POST'])
@@ -244,31 +200,17 @@ def savedata():
     log_file=open(app.config['UPLOAD_FOLDER']+request.form['filename'],"w")
     log_data = request.form['filedata']
     log_data1=((log_data.replace("<p>","\n")).replace("</p>","")).replace("<br>","\n")
-    # log_data1.replace("</p>","")
-    # log_data.replace("<br>","\n")
     log_file.write(log_data1)
     log_file.close()
     #return redirect(url_for('uploaded_file',filename="log.txt"))
     return "Uploaded"
 
-
-    # headers = {"Content-Disposition":"attachment; filename=log.txt"}
-    # with open("uploads/log.txt",'r') as f:
-    #     body=f.read()
-    #     return make_response((body,headers))
-    # # return send_file(app.config['UPLOAD_FOLDER']+"log.txt",as_attachment=True)
-    #return "Done"
-    #stop listening
-
-@app.route('/stop/',methods=['POST'])
-def stop():
+@app.route('/stoplisten/',methods=['POST'])
+def stoplisten():
     global ser
-    global dataneed
-    dataneed=False
-
-    # ser.flushInput()
+    global listenrequest
+    listenrequest=False
     ser.close()
-	#print dataneed
     return "0"
 
 
@@ -278,27 +220,20 @@ def ackreceived():
     line=[]
     ser1=serial.Serial(port=usb_path_base,baudrate=115200)
     while True:
-        # try:
         for c in ser1.read():
             line.append(c.encode('hex'))
             if c.encode('hex')=="7e":
                 if line.count('7e')==2:
                     packet=''.join(line)
                     print packet
-
                     if packet[24:30]=="003f53":
                         print packet[22:24]
                         ser1.close()
+                        global templateData
                         templateData['consoledata']="Nothing yet"
                         return packet[22:24]
                     line=[] 
                     packet=""
-
-        # except serial.serialutil.SerialException:
-        #     pass
-
-                
-
 
 if __name__ == '__main__':
     proc = subprocess.Popen(["python USBAutoDetect.py"],stdout=subprocess.PIPE,shell = True)
