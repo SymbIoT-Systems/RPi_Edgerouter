@@ -57,6 +57,7 @@ def uploadtomote(slotnum,imgpath):
     (out,err) = proc.communicate()
     return out
 
+#If a user initiates the listen process this function reads data from serial and pushes it to the client through the socket
 def serial_socket():
 	line=[]
 	while listenrequest:
@@ -183,17 +184,6 @@ def startlisten():
     listenrequest=True
     serial_socket()
     #return "Listen Start Done"    
-
-
-@socketio.on('listen',namespace='/listen')
-def test_message():
-    basepathdetect()
-    global ser
-    ser=serial.Serial(port=usb_path_base,baudrate=115200)
-    subprocess.call(["tos-deluge serial@"+usb_path_base+":115200 -sr 1"],shell=True)
-    global listenrequest
-    listenrequest=True
-    serial_socket()
 
 @app.route('/savelog/',methods=['POST'])
 def savedata():
