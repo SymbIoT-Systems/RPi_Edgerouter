@@ -2,13 +2,12 @@
 Web application to interact with the WSN Testbed. 
 Features:
 
-1.Ping selective nodes
+1.Ping all nodes
 2.Upload tos_image.xml files
-3.Listen mode: Basestation sniffer? Show output in a console online --DONE!
-4.Switch images on all nodes --DONE!
-5.Detect a basestation plugged into laptop 
-6.Read basestation's contents in the eeprom slots (later)
-
+3.Listen mode: Basestation sniffer and show output in a console online
+4.Switch images on all nodes and show image details of current slot after switching
+5.Detect changes in port,status of basestation plugged into laptop
+6.Read basestation's contents in the eeprom slots
 '''
 
 import os
@@ -25,31 +24,12 @@ import json
 #Global variable declarations
 
 templateData = {
-    'consoledata':"Nothing yet",
-    'baseimagedata':"BaseStation offline"
+    'consoledata':"Nothing yet"+"\n",
+    'baseimagedata':"BaseStation offline"+"\n"
 }
 
 slotnum = 1
 imagepath = "uploads/"
-
-#Ensure that the initial base path while launching the server is correct
-usb_path_base = os.getenv('motepath')
-if usb_path_base is None:
-    usb_path_base="/dev/ttyUSB0"
-    #global templateData
-    templateData['consoledata'] = "BaseStation disconnected"
-    # templateData = {
-    # 'consoledata':"Basestation Disconnected",
-    # 'baseimagedata':"Basestation Disconnected"
-    # }
-else:
-    templateData['consoledata'] = "BaseStation connected at "+ usb_path_base
-    # templateData = {
-    # 'consoledata':"Basestation connected at "+ usb_path_base,
-    # 'baseimagedata':"Basestation connected at "+ usb_path_base
-    # }
-
-
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -119,14 +99,39 @@ def BaseStationDetails(imagenum):
     
     return out
 
+def basepathdetect():
+    global usb_path_base
+    usb_status_file=open("usb_status","r")
+    usb_path_base=usb_status_file.read(12)
+    print usb_path_base
+    usb_status_file.close()
+
+    if usb_path_base == "":
+        usb_path_base="/dev/ttyUSB0"
+        global templateData
+        templateData['consoledata']+="Basestation Disconnected\n"
+        templateData['baseimagedata']="Basestation Disconnected\n"
+        # templateData = {
+        # 'consoledata':"Basestation Disconnected",
+        # 'baseimagedata':"Basestation Disconnected"
+        # }
+    else:
+        templateData['consoledata']+="Basestation connected at "+ usb_path_base+"\n"
+        templateData['baseimagedata']="Basestation connected at "+ usb_path_base+"\n"
+        # templateData = {
+        # 'consoledata':"Basestation connected at "+ usb_path_base,
+        # 'baseimagedata':"Basestation connected at "+ usb_path_base
+        # }
 
 #App routes         
 @app.route('/')
 def index():
+    basepathdetect()
     return render_template('main.html',**templateData)
 
 @app.route('/cluster_status/',methods=['POST'])
 def pingall():
+    basepathdetect()
     status=[]
     imagenum=request.form['data']
     status.append(isNodeAlive(imagenum))
@@ -153,6 +158,7 @@ def ping():
 @app.route('/switch/', methods=['POST'])
 def switch():
     if request.method == "POST":
+        basepathdetect()
         imagenum = request.form['imagenumberswitch']
 
         proc = subprocess.Popen(["sym-deluge switch " + str(imagenum)],stdout=subprocess.PIPE,shell = True)
@@ -192,10 +198,10 @@ def upload():
 
     data1 = "Flash Initiated"
     global templateData
-
-    templateData = {
-     'consoledata':data1
-    }
+    templateData['consoledata']+="Flash Initiated"+"\n"
+    # templateData = {
+    #  'consoledata':data1
+    # }
     return redirect('/')
 
 @app.route('/flashnode/', methods=['POST'])
@@ -209,8 +215,22 @@ def uploaded_file(filename):
 	return send_from_directory(app.config['UPLOAD_FOLDER'],
                                filename,as_attachment=True)
 
+@app.route('/start/',methods=['POST'])
+def start():
+    basepathdetect()
+    global ser
+    ser=serial.Serial(port=usb_path_base,baudrate=115200)
+    #subprocess.call(["tos-deluge serial@"+usb_path_base+":115200 -sr 1"],shell=True)
+    global dataneed
+    dataneed=True
+    #print dataneed
+    serial_socket()
+    #return "Listen Start Done"    
+
+
 @socketio.on('listen',namespace='/test')
 def test_message():
+    basepathdetect()
     global ser
     ser=serial.Serial(port=usb_path_base,baudrate=115200)
     subprocess.call(["tos-deluge serial@"+usb_path_base+":115200 -sr 1"],shell=True)
@@ -222,7 +242,11 @@ def test_message():
 @app.route('/savelog/',methods=['POST'])
 def savedata():
     log_file=open(app.config['UPLOAD_FOLDER']+request.form['filename'],"w")
-    log_file.write(request.form['filedata'])
+    log_data = request.form['filedata']
+    log_data1=((log_data.replace("<p>","\n")).replace("</p>","")).replace("<br>","\n")
+    # log_data1.replace("</p>","")
+    # log_data.replace("<br>","\n")
+    log_file.write(log_data1)
     log_file.close()
     #return redirect(url_for('uploaded_file',filename="log.txt"))
     return "Uploaded"
@@ -241,15 +265,16 @@ def stop():
     global ser
     global dataneed
     dataneed=False
+
+    # ser.flushInput()
     ser.close()
-	
 	#print dataneed
     return "0"
 
 
 @app.route('/ackreceived/',methods=['POST'])
 def ackreceived():
-    
+    basepathdetect()
     line=[]
     ser1=serial.Serial(port=usb_path_base,baudrate=115200)
     while True:
@@ -278,5 +303,6 @@ def ackreceived():
 if __name__ == '__main__':
     proc = subprocess.Popen(["python USBAutoDetect.py"],stdout=subprocess.PIPE,shell = True)
     socketio.run(app,host='0.0.0.0',port=8080)
+
 
 
