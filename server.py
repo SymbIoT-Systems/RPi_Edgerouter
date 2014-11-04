@@ -20,6 +20,7 @@ import subprocess
 from pyudev import Context, Monitor, MonitorObserver, Device
 import sys
 import json
+import sqlite3
 
 #Global variable declarations
 
@@ -44,6 +45,22 @@ app.config['ALLOWED_EXTENSIONS'] = set(['xml'])
 app.config['SECRET_KEY']="secret!"
 socketio=SocketIO(app)
 listenrequest=False
+
+#Database initialisation
+file_status = os.path.isfile('gateway.db')
+
+conn = sqlite3.connect('gateway.db')
+
+if (file_status == False):
+    conn.execute('''CREATE TABLE NODESTATUS 
+        (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        NODE_NUM    INT NOT NULL,
+        CLUSTER_HEAD    TEXT NOT NULL,
+        NODE_TYPE   TEXT,
+        SPECIAL_PROP    TEXT,
+        BATTERY_STATUS  TEXT );''')
+
+    
 
 #Function Definitions
 # For a given file, return whether it's an allowed type or not
@@ -225,6 +242,18 @@ def ackreceived():
                         return packet[22:24]
                     line=[] 
                     packet=""
+
+@app.route('/data_manage/')
+def data_manage():
+
+    return render_template('data_manage.html')
+
+@app.route('/data_add/', methods=['POST'])
+def data_add():
+    conn.execute("INSERT INTO NODESTATUS (NODE_NUM, CLUSTER_HEAD, NODE_TYPE, SPECIAL_PROP) VALUES (%d,%d,\'%s\',\'%s\')" %(int(request.form['nodeid']), int(request.form['clusterh_id']),request.form['nodetype'],request.form['nodeprop']))
+    conn.commit()
+    return '0'
+
 
 if __name__ == '__main__':
     proc = subprocess.Popen(["python USBAutoDetect.py"],stdout=subprocess.PIPE,shell = True)

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<h1>Database Management</h1>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+	<script>
+
+		$(document).ready(function(){
+
+			 $("#data_add_form").submit(function(event) {
+      
+      /* stop form from submitting normally */
+      event.preventDefault();
+      /* get some values from elements on the page: */
+      var $form = $( this ),
+          url = $form.attr('action');
+      /* Send the data using post */
+      $.post( url, { nodeid: $('nodeid', '#data_add_form').val(),
+      				 clusterh_id: $('clusterh_id', '#data_add_form').val(),
+      				 nodetype: $('nodetype', '#data_add_form').val(),
+      				 nodeprop: $('nodeprop', '#data_add_form').val()
+      				} 
+      				);
+      
+    });
+
+
+		});
+	</script>
+	</head>
+
+	<body>
+		<form action="/data_add/" method="post" name="data_add_form" id="data_add_form">
+			Node ID: <input type="number" name="nodeid"></br>
+			Cluster Head's ID: <input type="number" name="clusterh_id"></br>
+			Node Type: <input type="text" name="nodetype"></br>
+			Special Properties: <input type="text" name="nodeprop"></br>
+
+			<input type="submit" value="Submit">	
+		</form>
+		
+		</br>
+		</br>
+
+		<table style="width:100%">
+			
+			<tr>
+				<td>Node No.</td>
+				<td>Cluster Head No.</td>		
+				<td>Node Type</td>
+				<td>Properties</td>
+				<td>Battery Status</td>
+				<td>Edit</td>
+			</tr>
+			
+		</table>
+	</body>
+</html>
