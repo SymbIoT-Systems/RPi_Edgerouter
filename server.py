@@ -49,9 +49,8 @@ listenrequest=False
 #Database initialisation
 file_status = os.path.isfile('gateway.db')
 
-conn = sqlite3.connect('gateway.db')
-
 if (file_status == False):
+    conn = sqlite3.connect('gateway.db')
     conn.execute('''CREATE TABLE NODESTATUS 
         (ID INTEGER PRIMARY KEY AUTOINCREMENT,
         NODE_NUM    INT NOT NULL,
@@ -59,6 +58,7 @@ if (file_status == False):
         NODE_TYPE   TEXT,
         SPECIAL_PROP    TEXT,
         BATTERY_STATUS  TEXT );''')
+    conn.close()
 
     
 
@@ -250,14 +250,22 @@ def data_manage():
 
 @app.route('/data_add/', methods=['POST'])
 def data_add():
-    conn.execute("INSERT INTO NODESTATUS (NODE_NUM, CLUSTER_HEAD, NODE_TYPE, SPECIAL_PROP) VALUES (%d,%d,\'%s\',\'%s\')" %(int(request.form['nodeid']), int(request.form['clusterh_id']),request.form['nodetype'],request.form['nodeprop']))
+    conn = sqlite3.connect('gateway.db')
+    conn.execute("INSERT INTO NODESTATUS (NODE_NUM, CLUSTER_HEAD, NODE_TYPE, SPECIAL_PROP) VALUES (%d,%d,\'%s\',\'%s\')" % (int(request.form['nodeid']), int(request.form['clusterh_id']),request.form['nodetype'],request.form['nodeprop']))
     conn.commit()
+    conn.close()
     return '0'
 
+@app.route('/data_get/',methods=['POST'])
+def data_get():
+    conn = sqlite3.connect('gateway.db')
+    cursor=conn.execute("SELECT * from NODESTATUS")
+    conn.close()
+    return json.dumps(cursor.fetchall())
 
 if __name__ == '__main__':
     proc = subprocess.Popen(["python USBAutoDetect.py"],stdout=subprocess.PIPE,shell = True)
-    socketio.run(app,host='0.0.0.0',port=8080)
+    socketio.run(app,host='0.0.0.0',port=8088)
 
 
 

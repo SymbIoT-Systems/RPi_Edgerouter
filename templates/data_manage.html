@@ -6,27 +6,41 @@
 
 	<script>
 
-		$(document).ready(function(){
+	$(document).ready(function(){
 
-			 $("#data_add_form").submit(function(event) {
-      
-      /* stop form from submitting normally */
-      event.preventDefault();
-      /* get some values from elements on the page: */
-      var $form = $( this ),
-          url = $form.attr('action');
-      /* Send the data using post */
-      $.post( url, { nodeid: $('nodeid', '#data_add_form').val(),
-      				 clusterh_id: $('clusterh_id', '#data_add_form').val(),
-      				 nodetype: $('nodetype', '#data_add_form').val(),
-      				 nodeprop: $('nodeprop', '#data_add_form').val()
-      				} 
-      				);
-      
+		function getdata(){
+			$.post('/data_get/',{data:'dummypost'},function(result,status){
+				jsondata=$.parseJSON(result);
+				var html;
+				for (var i=0;i<jsondata.length;++i){
+					html+='<tr>';
+					for (var j=1;j<6;++j){
+						html+='<td>'+jsondata[i][j]+'</td>';
+					}
+					html+='</tr>';
+				}
+    			$(html).appendTo("#nodesdata");
+			});
+		}
+
+	$("#data_add_form").submit(function(event) {
+
+	/* stop form from submitting normally */
+	event.preventDefault();
+	/* get some values from elements on the page: */
+	var $form = $( this ),
+	url = $form.attr('action');
+	/* Send the data using post */
+	$.post( url, { nodeid: $('nodeid', '#data_add_form').val(),
+	clusterh_id: $('clusterh_id', '#data_add_form').val(),
+	nodetype: $('nodetype', '#data_add_form').val(),
+	nodeprop: $('nodeprop', '#data_add_form').val()
+	},function(result,status){
+		getdata();
+	});
+    getdata();
     });
-
-
-		});
+});
 	</script>
 	</head>
 
@@ -53,7 +67,9 @@
 				<td>Battery Status</td>
 				<td>Edit</td>
 			</tr>
-			
+			<div id="nodesdata">
+				
+			</div>
 		</table>
 	</body>
 </html>
