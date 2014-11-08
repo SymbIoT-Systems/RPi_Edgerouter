@@ -2,17 +2,17 @@
 <html lang="en">
   <head>
     
-<!--     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
-          rel="stylesheet"> -->
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
+          rel="stylesheet">
     <!-- Local stylesheet -->
-    <link rel="stylesheet" type="text/css" href="static/bootstrap.min.js">
+    <!-- <link rel="stylesheet" type="text/css" href="static/bootstrap.min.js"> -->
     <link rel="stylesheet" type="text/css" href="static/style.css">
     
-    <script src="static/jquery.min.js"></script>
-    <script type="text/javascript" src="socket.io.min.js"></script>
+   <!--  <script src="static/jquery.min.js"></script>
+    <script type="text/javascript" src="socket.io.min.js"></script> -->
 
-    <!--<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>-->
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
     
     <script>
     
@@ -61,7 +61,7 @@
       
       //Flash Initiated
       // if ($("#consolebox").text().indexOf("Flash Initiated")>=0)
-      if (({{flashstarted}}).indexOf("True")>=0) 
+      if (("{{flashstarted}}").indexOf("True")>=0) 
       {
         // Once flash initiated:
         //Disable all buttons...trust me...it's for their own good..
@@ -81,7 +81,8 @@
       }
       else{
         $("#bar").hide();
-        isclusteralive();
+        // isclusteralive(); 
+        // Un-comment for actual working^
       }
 
       function isclusteralive (argument) {

@@ -77,15 +77,19 @@ def uploadtomote(slotnum,imgpath):
 
 #If a user initiates the listen process this function reads data from serial and pushes it to the client through the socket
 def serial_socket():
-	line=[]
-	while listenrequest:
-		if listenrequest==True:
-			for c in ser.read():
-				line.append(c.encode('hex'))
-				if c.encode('hex')=="7e":
-					if line.count('7e')==2:
-						socketio.emit('my response',{'data':''.join(line)},namespace='/listen')
-						line=[]
+    line=[]
+    while listenrequest:
+        
+        if listenrequest==True:
+            for c in ser.read(1):
+
+                line.append(c.encode('hex'))
+                if c.encode('hex')=="7e":
+                    if line.count('7e')==2:
+                        print ''.join(line)
+                        socketio.emit('my response',{'data':''.join(line)},namespace='/listen')
+                        ser.flush()
+                        line=[]
 
 def isNodeAlive(nodenum):
     if nodenum==1:
@@ -201,7 +205,7 @@ def startlisten():
     global listenrequest
     listenrequest=True
     serial_socket()
-    #return "Listen Start Done"    
+    return "Listen Start Done"    
 
 @app.route('/savelog/',methods=['POST'])
 def savedata():
@@ -251,7 +255,12 @@ def data_manage():
 @app.route('/data_add/', methods=['POST'])
 def data_add():
     conn = sqlite3.connect('gateway.db')
-    conn.execute("INSERT INTO NODESTATUS (NODE_NUM, CLUSTER_HEAD, NODE_TYPE, SPECIAL_PROP) VALUES (%d,%d,\'%s\',\'%s\')" % (int(request.form['nodeid']), int(request.form['clusterh_id']),request.form['nodetype'],request.form['nodeprop']))
+    nodeid=(request.form['nodeid'])
+    clusterh_id=(request.form['clusterh_id'])
+    node_prop=request.form['nodeprop']
+    node_type=request.form['nodetype']
+    # conn.execute("INSERT INTO NODESTATUS (NODE_NUM, CLUSTER_HEAD, NODE_TYPE, SPECIAL_PROP) VALUES (%d,%d,\'%s\',\'%s\')" % (int(request.form['nodeid']), int(request.form['clusterh_id']),request.form['nodetype'],request.form['nodeprop']))
+    conn.execute("INSERT INTO NODESTATUS (NODE_NUM, CLUSTER_HEAD, NODE_TYPE, SPECIAL_PROP) VALUES (" + nodeid + "," + clusterh_id + ",'" + node_type + "','" + node_prop + "')")
     conn.commit()
     conn.close()
     return '0'
@@ -260,8 +269,17 @@ def data_add():
 def data_get():
     conn = sqlite3.connect('gateway.db')
     cursor=conn.execute("SELECT * from NODESTATUS")
+    a = cursor.fetchall()
+    print a
     conn.close()
-    return json.dumps(cursor.fetchall())
+    # print "after"+a
+    return json.dumps(a)
+
+#NOT REDUNDANT!
+@socketio.on('listen',namespace='/listen')
+def handle_message(message):
+    print('received message: ' + message)
+
 
 if __name__ == '__main__':
     proc = subprocess.Popen(["python USBAutoDetect.py"],stdout=subprocess.PIPE,shell = True)

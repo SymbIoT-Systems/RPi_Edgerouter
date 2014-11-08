@@ -10,19 +10,25 @@
 
 		function getdata(){
 			$.post('/data_get/',{data:'dummypost'},function(result,status){
+				// alert(result);
 				jsondata=$.parseJSON(result);
-				var html;
-				for (var i=0;i<jsondata.length;++i){
+				// alert(jsondata.length);
+				var html = '<table style="width:100%"><tr><td>Node No.</td><td>Cluster Head No.</td><td>Node Type</td><td>Properties</td>			<td>Battery Status</td><td>Edit</td></tr>';
+				for (var i=0;i<jsondata.length;i++){
 					html+='<tr>';
-					for (var j=1;j<6;++j){
+					for (var j=1;j<6;j++){
 						html+='<td>'+jsondata[i][j]+'</td>';
 					}
 					html+='</tr>';
+
 				}
-    			$(html).appendTo("#nodesdata");
+				html+='</table>';
+    			$("#nodesdata").html(html);
+
 			});
 		}
 
+	getdata();
 	$("#data_add_form").submit(function(event) {
 
 	/* stop form from submitting normally */
@@ -31,14 +37,18 @@
 	var $form = $( this ),
 	url = $form.attr('action');
 	/* Send the data using post */
-	$.post( url, { nodeid: $('nodeid', '#data_add_form').val(),
-	clusterh_id: $('clusterh_id', '#data_add_form').val(),
-	nodetype: $('nodetype', '#data_add_form').val(),
-	nodeprop: $('nodeprop', '#data_add_form').val()
+	$.post( url, { nodeid: $('#nodeid').val(),
+	clusterh_id: $('#clusterh_id').val(),
+	nodetype: $('#nodetype').val(),
+	nodeprop: $('#nodeprop').val()
 	},function(result,status){
+		$('#nodeid').val('');
+		$('#clusterh_id').val('');
+		$('#nodetype').val('');
+		$('#nodeprop').val('');
 		getdata();
 	});
-    getdata();
+    
     });
 });
 	</script>
@@ -46,10 +56,10 @@
 
 	<body>
 		<form action="/data_add/" method="post" name="data_add_form" id="data_add_form">
-			Node ID: <input type="number" name="nodeid"></br>
-			Cluster Head's ID: <input type="number" name="clusterh_id"></br>
-			Node Type: <input type="text" name="nodetype"></br>
-			Special Properties: <input type="text" name="nodeprop"></br>
+			Node ID: <input type="number" id="nodeid"></br>
+			Cluster Head's ID: <input type="number" id="clusterh_id"></br>
+			Node Type: <input type="text" id="nodetype"></br>
+			Special Properties: <input type="text" id="nodeprop"></br>
 
 			<input type="submit" value="Submit">	
 		</form>
@@ -57,7 +67,7 @@
 		</br>
 		</br>
 
-		<table style="width:100%">
+		<!-- <table style="width:100%">
 			
 			<tr>
 				<td>Node No.</td>
@@ -67,9 +77,10 @@
 				<td>Battery Status</td>
 				<td>Edit</td>
 			</tr>
-			<div id="nodesdata">
+			
+		</table> -->
+		<div id="nodesdata">
 				
 			</div>
-		</table>
 	</body>
 </html>
