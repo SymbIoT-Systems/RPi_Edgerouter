@@ -21,7 +21,9 @@ from pyudev import Context, Monitor, MonitorObserver, Device
 import sys
 import json
 import sqlite3
-
+import re #String replacements
+from gevent import monkey
+monkey.patch_all()
 #Global variable declarations
 
 templateData = {
@@ -51,13 +53,28 @@ file_status = os.path.isfile('gateway.db')
 
 if (file_status == False):
     conn = sqlite3.connect('gateway.db')
-    conn.execute('''CREATE TABLE NODESTATUS 
+    conn.execute('''CREATE TABLE NODEDETAILS 
         (ID INTEGER PRIMARY KEY AUTOINCREMENT,
         NODE_NUM    INT NOT NULL,
-        CLUSTER_HEAD    TEXT NOT NULL,
+        DEV_ID    TEXT,
         NODE_TYPE   TEXT,
         SPECIAL_PROP    TEXT,
         BATTERY_STATUS  TEXT );''')
+    conn.execute('''CREATE TABLE LISTENDATA
+        (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            DATE TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            DATA TEXT NOT NULL);''')
+    conn.execute('''CREATE TABLE CLUSTERDETAILS
+        (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            CLUSTER_NO INT NOT NULL,
+            HEAD_NO INT NOT NULL,
+            HEAD_DEVICEID TEXT,
+            NODE_LIST TEXT NOT NULL,
+            PI_MAC TEXT,
+            PI_IP TEXT,
+            SLOT1 TEXT,
+            SLOT2 TEXT,
+            SLOT3 TEXT);''')
     conn.close()
 
     
@@ -86,9 +103,16 @@ def serial_socket():
                 line.append(c.encode('hex'))
                 if c.encode('hex')=="7e":
                     if line.count('7e')==2:
-                        print ''.join(line)
-                        socketio.emit('my response',{'data':''.join(line)},namespace='/listen')
+                        packetdata=''.join(line)
+                        if packetdata.count('00')>4:
+                            packetdata = re.sub('[00]', '', packetdata)
+
+                        socketio.emit('my response',{'data':packetdata},namespace='/listen')
                         ser.flush()
+                        conn = sqlite3.connect('gateway.db')
+                        conn.execute("INSERT INTO LISTENDATA (DATA) VALUES (\'"+packetdata+"\')")
+                        conn.commit()
+                        conn.close()
                         line=[]
 
 def isNodeAlive(nodenum):
@@ -249,31 +273,50 @@ def ackreceived():
 
 @app.route('/data_manage/')
 def data_manage():
-
     return render_template('data_manage.html')
 
 @app.route('/data_add/', methods=['POST'])
 def data_add():
     conn = sqlite3.connect('gateway.db')
     nodeid=(request.form['nodeid'])
-    clusterh_id=(request.form['clusterh_id'])
+    dev_id=(request.form['dev_id'])
     node_prop=request.form['nodeprop']
     node_type=request.form['nodetype']
     # conn.execute("INSERT INTO NODESTATUS (NODE_NUM, CLUSTER_HEAD, NODE_TYPE, SPECIAL_PROP) VALUES (%d,%d,\'%s\',\'%s\')" % (int(request.form['nodeid']), int(request.form['clusterh_id']),request.form['nodetype'],request.form['nodeprop']))
-    conn.execute("INSERT INTO NODESTATUS (NODE_NUM, CLUSTER_HEAD, NODE_TYPE, SPECIAL_PROP) VALUES (" + nodeid + "," + clusterh_id + ",'" + node_type + "','" + node_prop + "')")
+    conn.execute("INSERT INTO NODEDETAILS (NODE_NUM, DEV_ID, NODE_TYPE, SPECIAL_PROP) VALUES (" + nodeid + "," + dev_id + ",'" + node_type + "','" + node_prop + "')")
     conn.commit()
     conn.close()
     return '0'
 
 @app.route('/data_get/',methods=['POST'])
 def data_get():
+    table=request.form['data']
     conn = sqlite3.connect('gateway.db')
-    cursor=conn.execute("SELECT * from NODESTATUS")
-    a = cursor.fetchall()
+    if table == "nodesdata":
+        cursor=conn.execute("SELECT * from NODEDETAILS")
+        a = cursor.fetchall()
+        print a
+    elif table == "clustersdata":
+        cursor=conn.execute("SELECT * from CLUSTERDETAILS")
+        a = cursor.fetchall()
     print a
     conn.close()
     # print "after"+a
     return json.dumps(a)
+
+@app.route('/data_edit/',methods=['POST'])
+def data_edit():
+    conn = sqlite3.connect('gateway.db')
+    idno=(request.form['idno'])
+    nodeid=(request.form['nodeid'])
+    dev_id=(request.form['dev_id'])
+    node_prop=request.form['nodeprop']
+    node_type=request.form['nodetype']
+    conn.execute("UPDATE NODEDETAILS SET NODE_NUM = "+nodeid+" ,DEV_ID = "+dev_id+", NODE_TYPE = '"+node_type+"', SPECIAL_PROP = '" + node_prop + "' WHERE ID="+ idno +";")
+    conn.commit()
+    conn.close()
+    return "Done"
+
 
 #NOT REDUNDANT!
 @socketio.on('listen',namespace='/listen')
