@@ -8,6 +8,7 @@
 
 	<script>
 	var jsondata;
+	var jsondatacluster;
 
 		function editclick(name){
 			$("#editform").show();
@@ -18,15 +19,27 @@
 			$('#edit_nodeprop').val(jsondata[name-1][4]);
 		}
 
+		function editclickcluster(name){
+			$('#cluster_edit_form').show();
+			$('#edit_cluster_idno').val(name);
+			$('#edit_cluster_no').val(jsondatacluster[name-1][1]);
+			$('#edit_clusterhead_no').val(jsondatacluster[name-1][2]);
+			$('#edit_head_dev_id').val(jsondatacluster[name-1][3]);
+			$('#edit_node_list').val(jsondatacluster[name-1][4]);
+			$('#edit_gateway_mac').val(jsondatacluster[name-1][5]);
+			$('#edit_gateway_ip').val(jsondatacluster[name-1][6]);
+		}
+
 	$(document).ready(function(){
 		$("#editform").hide();
-		
+		$('#cluster_edit_form').hide();
+
 		function getnodedata(){
 			$.post('/data_get/',{data:'nodesdata'},function(result,status){
 				// alert(result);
 				jsondata=$.parseJSON(result);
 				// alert(jsondata.length);
-				var html = '<table style="width:100%"><tr><td>Node No.</td><td>Device ID.</td><td>Node Type</td><td>Properties</td>			<td>Battery Status</td><td>Edit</td></tr>';
+				var html = '<table style="width:100%"><tr><td>Node No.</td><td>Device ID.</td><td>Node Type</td><td>Properties</td>			<td>Battery Status</td><td></td></tr>';
 				for (var i=0;i<jsondata.length;i++){
 					html+='<tr>';
 					for (var j=1;j<6;j++){
@@ -41,18 +54,18 @@
 			});
 		}
 
-		function getcluserdata(){
+		function getclusterdata(){
 			$.post('/data_get/',{data:'clustersdata'},function(result,status){
 				// alert(result);
-				jsondata=$.parseJSON(result);
+				jsondatacluster=$.parseJSON(result);
 				// alert(jsondata.length);
-				var html = '<table style="width:100%"><tr><td>Cluster No.</td><td>Cluster Head No.</td><td>ClusterHead Device ID</td><td>List of Nodes</td><td>Gateway MAC</td><td>Gateway IP</td><td>Code Details Slot 1</td><td>Code Details Slot 2</td><td>Code Details Slot 3</td></tr>';
-				for (var i=0;i<jsondata.length;i++){
+				var html = '<table style="width:100%"><tr><td>Cluster No.</td><td>Cluster Head No.</td><td>ClusterHead Device ID</td><td>List of Nodes</td><td>Gateway MAC</td><td>Gateway IP</td><td>Code Details Slot 1</td><td>Code Details Slot 2</td><td>Code Details Slot 3</td><td></td></tr>';
+				for (var i=0;i<jsondatacluster.length;i++){
 					html+='<tr>';
-					for (var j=1;j<6;j++){
-						html+='<td>'+jsondata[i][j]+'</td>';
+					for (var j=1;j<10;j++){
+						html+='<td>'+jsondatacluster[i][j]+'</td>';
 					}
-					html+='<td><button onclick="editclick('+jsondata[i][0]+');">Edit</button></td></tr>';
+					html+='<td><button onclick="editclickcluster('+jsondatacluster[i][0]+');">Edit</button></td></tr>';
 
 				}
 				html+='</table>';
@@ -62,7 +75,7 @@
 		}
 
 	getnodedata();
-	getcluserdata();
+	getclusterdata();
 
 	$("#data_add_form").submit(function(event) {
 
@@ -72,7 +85,8 @@
 	var $form = $( this ),
 	url = $form.attr('action');
 	/* Send the data using post */
-	$.post( url, { nodeid: $('#nodeid').val(),
+	$.post( url, { data:'nodeadd',
+	nodeid: $('#nodeid').val(),
 	dev_id: $('#dev_id').val(),
 	nodetype: $('#nodetype').val(),
 	nodeprop: $('#nodeprop').val()
@@ -95,6 +109,7 @@
 	url = $form.attr('action');
 	/* Send the data using post */
 	$.post( url, { 
+	data:'nodeedit',
 	idno:  $('#edit_idno').val(),
 	nodeid: $('#edit_nodeid').val(),
 	dev_id: $('#edit_dev_id').val(),
@@ -107,6 +122,65 @@
 		$('#edit_nodeprop').val('');
 		$('#editform').hide();
 		getnodedata();
+	});
+    
+    });
+
+
+    $("#cluster_add_form").submit(function(event) {
+
+	/* stop form from submitting normally */
+	event.preventDefault();
+	/* get some values from elements on the page: */
+	var $form = $( this ),
+	url = $form.attr('action');
+	/* Send the data using post */
+	$.post( url, { 
+	data:'clusteradd',
+	clusterno:  $('#cluster_no').val(),
+	clusterhead_no: $('#clusterhead_no').val(),
+	head_dev_id: $('#head_dev_id').val(),
+	node_list: $('#node_list').val(),
+	gateway_mac: $('#gateway_mac').val(),
+	gateway_ip: $('#gateway_ip').val()
+	},function(result,status){
+	$('#cluster_no').val('');
+	$('#clusterhead_no').val('');
+	$('#head_dev_id').val('');
+	$('#node_list').val('');
+	$('#gateway_mac').val('');
+	$('#gateway_ip').val('');
+	getclusterdata();
+	});
+    
+    });
+    $("#cluster_edit_form").submit(function(event) {
+
+	/* stop form from submitting normally */
+	event.preventDefault();
+	/* get some values from elements on the page: */
+	var $form = $( this ),
+	url = $form.attr('action');
+	/* Send the data using post */
+	$.post( url, { 
+	data:'clusteredit',
+	idno:  $('#edit_cluster_idno').val(),
+	clusterno:  $('#edit_cluster_no').val(),
+	clusterhead_no: $('#edit_clusterhead_no').val(),
+	head_dev_id: $('#edit_head_dev_id').val(),
+	node_list: $('#edit_node_list').val(),
+	gateway_mac: $('#edit_gateway_mac').val(),
+	gateway_ip: $('#edit_gateway_ip').val()
+	},function(result,status){
+	$('#edit_cluster_idno').val('');
+	$('#edit_cluster_no').val('');
+	$('#edit_clusterhead_no').val('');
+	$('#edit_head_dev_id').val('');
+	$('#edit_node_list').val('');
+	$('#edit_gateway_mac').val('');
+	$('#edit_gateway_ip').val('');
+	$('#cluster_edit_form').hide();
+	getclusterdata();
 	});
     
     });
@@ -125,13 +199,13 @@
 			<input type="submit" value="Submit">	
 		</form>
 		<h1>CLUSTER FORM</h1>
-		<form action="/data_add/" method="post" name="data_add_form" id="data_add_form">
-			Cluster No: <input type="number" id="nodeid"></br>
-			Cluster Head No: <input type="number" id="dev_id"></br>
-			Cluster Head Device ID: <input type="text" id="nodetype"></br>
-			List of Nodes: <input type="text" id="nodeprop"></br>
-			Gateway MAC: <input type="text" id="nodeprop"></br>
-			Gateway IP: <input type="text" id="nodeprop"></br>
+		<form action="/data_add/" method="post" name="cluster_add_form" id="cluster_add_form">
+			Cluster No: <input type="number" id="cluster_no"></br>
+			Cluster Head No: <input type="number" id="clusterhead_no"></br>
+			Cluster Head Device ID: <input type="text" id="head_dev_id"></br>
+			List of Nodes: <input type="text" id="node_list"></br>
+			Gateway MAC: <input type="text" id="gateway_mac"></br>
+			Gateway IP: <input type="text" id="gateway_ip"></br>
 			<input type="submit" value="Submit">	
 		</form>
 
@@ -156,6 +230,20 @@
 			Node Type: <input type="text" id="edit_nodetype"></br>
 			Special Properties: <input type="text" id="edit_nodeprop"></br>
 
+			<input type="submit" value="Edit">	
+		</form>
+		</div>
+
+		<div id="clustereditform" name="clustereditform" class="popup">
+			
+			<form action="/data_edit/" method="post" name="cluster_edit_form" id="cluster_edit_form">
+			Row ID:<input type="number" id="edit_cluster_idno" disabled></br>	
+			Cluster No: <input type="number" id="edit_cluster_no"></br>
+			Cluster Head No: <input type="number" id="edit_clusterhead_no"></br>
+			Cluster Head Device ID: <input type="text" id="edit_head_dev_id"></br>
+			List of Nodes: <input type="text" id="edit_node_list"></br>
+			Gateway MAC: <input type="text" id="edit_gateway_mac"></br>
+			Gateway IP: <input type="text" id="edit_gateway_ip"></br>
 			<input type="submit" value="Edit">	
 		</form>
 		</div>

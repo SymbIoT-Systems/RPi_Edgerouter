@@ -277,13 +277,23 @@ def data_manage():
 
 @app.route('/data_add/', methods=['POST'])
 def data_add():
+    table=request.form['data']
     conn = sqlite3.connect('gateway.db')
-    nodeid=(request.form['nodeid'])
-    dev_id=(request.form['dev_id'])
-    node_prop=request.form['nodeprop']
-    node_type=request.form['nodetype']
-    # conn.execute("INSERT INTO NODESTATUS (NODE_NUM, CLUSTER_HEAD, NODE_TYPE, SPECIAL_PROP) VALUES (%d,%d,\'%s\',\'%s\')" % (int(request.form['nodeid']), int(request.form['clusterh_id']),request.form['nodetype'],request.form['nodeprop']))
-    conn.execute("INSERT INTO NODEDETAILS (NODE_NUM, DEV_ID, NODE_TYPE, SPECIAL_PROP) VALUES (" + nodeid + "," + dev_id + ",'" + node_type + "','" + node_prop + "')")
+    if table == "nodeadd":
+        nodeid=(request.form['nodeid'])
+        dev_id=(request.form['dev_id'])
+        node_prop=request.form['nodeprop']
+        node_type=request.form['nodetype']
+        # conn.execute("INSERT INTO NODESTATUS (NODE_NUM, CLUSTER_HEAD, NODE_TYPE, SPECIAL_PROP) VALUES (%d,%d,\'%s\',\'%s\')" % (int(request.form['nodeid']), int(request.form['clusterh_id']),request.form['nodetype'],request.form['nodeprop']))
+        conn.execute("INSERT INTO NODEDETAILS (NODE_NUM, DEV_ID, NODE_TYPE, SPECIAL_PROP) VALUES (" + nodeid + "," + dev_id + ",'" + node_type + "','" + node_prop + "')")
+    elif table == "clusteradd":
+        clusterno=request.form['clusterno']
+        clusterhead_no=request.form['clusterhead_no']
+        head_dev_id=request.form['head_dev_id']
+        node_list=request.form['node_list']
+        gateway_mac=request.form['gateway_mac']
+        gateway_ip=request.form['gateway_ip']
+        conn.execute("INSERT INTO CLUSTERDETAILS (CLUSTER_NO,HEAD_NO,HEAD_DEVICEID,NODE_LIST,PI_MAC,PI_IP) VALUES (" +clusterno + "," + clusterhead_no + ",'" + head_dev_id + "','" + node_list + "','" + gateway_mac + "','" + gateway_ip + "')")
     conn.commit()
     conn.close()
     return '0'
@@ -295,7 +305,6 @@ def data_get():
     if table == "nodesdata":
         cursor=conn.execute("SELECT * from NODEDETAILS")
         a = cursor.fetchall()
-        print a
     elif table == "clustersdata":
         cursor=conn.execute("SELECT * from CLUSTERDETAILS")
         a = cursor.fetchall()
