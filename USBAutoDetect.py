@@ -7,7 +7,7 @@ import os
 from requests import Session
 session = Session()
 
-port1 = "8080"
+port1 = "8088"
 
 #device1 = Device.from_device_file(context,'/dev/ttyUSB1')
 

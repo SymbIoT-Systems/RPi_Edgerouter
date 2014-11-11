@@ -2,7 +2,10 @@
 <html lang="en">
 	<head>
 		<h1>Database Management</h1>
-		
+		<link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
+          rel="stylesheet">
+	<link rel="stylesheet" type="text/css" href="/static/style.css">
+
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 	
 
@@ -20,7 +23,7 @@
 		}
 
 		function editclickcluster(name){
-			$('#cluster_edit_form').show();
+			$('#clustereditform').show();
 			$('#edit_cluster_idno').val(name);
 			$('#edit_cluster_no').val(jsondatacluster[name-1][1]);
 			$('#edit_clusterhead_no').val(jsondatacluster[name-1][2]);
@@ -31,8 +34,10 @@
 		}
 
 	$(document).ready(function(){
+		$("#data_add_form").hide();
 		$("#editform").hide();
-		$('#cluster_edit_form').hide();
+		$("#cluster_add_form").hide();
+		$('#clustereditform').hide();
 
 		function getnodedata(){
 			$.post('/data_get/',{data:'nodesdata'},function(result,status){
@@ -184,13 +189,86 @@
 	});
     
     });
-});
+
+    /*-------------------- EXPANDABLE PANELS ----------------------*/
+        var panelspeed = 300; //panel animate speed in milliseconds
+        var totalpanels = 2; //total number of collapsible panels
+        var defaultopenpanel = 0; //leave 0 for no panel open
+        var accordian = false; //set panels to behave like an accordian, with one panel only ever open at once      
+ 
+        var panelheight = new Array();
+        var currentpanel = defaultopenpanel;
+        var iconheight = parseInt($('.icon-close-open').css('height'));
+        var highlightopen = true;
+ 
+        //Initialise collapsible panels
+        function panelinit() {
+                for (var i=1; i<=totalpanels; i++) {
+                    panelheight[i] = parseInt($('#cp-'+i).find('.expandable-panel-content').css('height'));
+                    $('#cp-'+i).find('.expandable-panel-content').css('margin-top', -panelheight[i]);
+                    if (defaultopenpanel == i) {
+                        $('#cp-'+i).find('.icon-close-open').css('background-position', '0px -'+iconheight+'px');
+                        $('#cp-'+i).find('.expandable-panel-content').css('margin-top', 0);
+                    }
+                }
+        }
+ 
+        $('.expandable-panel-heading').click(function() {
+            var obj = $(this).next();
+            var objid = parseInt($(this).parent().attr('ID').substr(3,2));
+            currentpanel = objid;
+            if (accordian == true) {
+                resetpanels();
+            }
+ 
+            if (parseInt(obj.css('margin-top')) <= (panelheight[objid]*-1)) {
+                obj.clearQueue();
+                obj.stop();
+                obj.prev().find('.icon-close-open').css('background-position', '0px -'+iconheight+'px');
+                obj.animate({'margin-top':0}, panelspeed);
+                if (highlightopen == true) {
+                    $('#cp-'+currentpanel + ' .expandable-panel-heading').addClass('header-active');
+                }
+            } else {
+                obj.clearQueue();
+                obj.stop();
+                obj.prev().find('.icon-close-open').css('background-position', '0px 0px');
+                obj.animate({'margin-top':(panelheight[objid]*-1)}, panelspeed);
+                if (highlightopen == true) {
+                    $('#cp-'+currentpanel + ' .expandable-panel-heading').removeClass('header-active');
+                }
+            }
+        });
+ 
+        function resetpanels() {
+            for (var i=1; i<=totalpanels; i++) {
+                if (currentpanel != i) {
+                    $('#cp-'+i).find('.icon-close-open').css('background-position', '0px 0px');
+                    $('#cp-'+i).find('.expandable-panel-content').animate({'margin-top':-panelheight[i]}, panelspeed);
+                    if (highlightopen == true) {
+                        $('#cp-'+i + ' .expandable-panel-heading').removeClass('header-active');
+                    }
+                }
+            }
+        }
+        
+       //Uncomment these lines if the expandable panels are not a fixed width and need to resize
+        $( window ).resize(function() {
+          panelinit();
+        });
+ 
+        $(window).load(function() {
+            panelinit();
+        }); //END LOAD
+    });
 	</script>
 	</head>
 
 	<body>
-		<h1>NODES FORM</h1>
+	<div class="container">
+		
 		<form action="/data_add/" method="post" name="data_add_form" id="data_add_form">
+			<h1>NODES FORM</h1>
 			Node ID: <input type="number" id="nodeid"></br>
 			Device ID: <input type="number" id="dev_id"></br>
 			Node Type: <input type="text" id="nodetype"></br>
@@ -198,8 +276,10 @@
 
 			<input type="submit" value="Submit">	
 		</form>
-		<h1>CLUSTER FORM</h1>
+
+		
 		<form action="/data_add/" method="post" name="cluster_add_form" id="cluster_add_form">
+			<h1>CLUSTER FORM</h1>
 			Cluster No: <input type="number" id="cluster_no"></br>
 			Cluster Head No: <input type="number" id="clusterhead_no"></br>
 			Cluster Head Device ID: <input type="text" id="head_dev_id"></br>
@@ -212,15 +292,31 @@
 		</br>
 		</br>
 
-		<div id="nodesdata">
-				
-			</div>
+		<div class="expandable-panel" id="cp-1">
+
+        	<div class="expandable-panel-heading">
+        	  <h2>Cluster Description<span class="icon-close-open"></span></h2>
+        	</div>
+
+	        <div class="expandable-panel-content">
+	        	<div id="nodesdata"></div>
+	        </br>
+	    	</div>
+	    </div>
+
+	    <div class="expandable-panel" id="cp-2">
+
+        	<div class="expandable-panel-heading">
+        	  <h2>Testbed Description<span class="icon-close-open"></span></h2>
+        	</div>		
+        	<div class="expandable-panel-content">
+        		<div id="clustersdata"></div>
+        	</div>
+        </div>
+
 		</br>
-		<div id="clustersdata">
-				
-			</div>
-			</br>
-	</br>
+		</br>
+
 		<div id="editform" name="editform" class="popup">
 			
 			<form action="/data_edit/" method="post" name="data_edit_form" id="data_edit_form">
@@ -230,7 +326,7 @@
 			Node Type: <input type="text" id="edit_nodetype"></br>
 			Special Properties: <input type="text" id="edit_nodeprop"></br>
 
-			<input type="submit" value="Edit">	
+			<input type="submit" value="Submit">	
 		</form>
 		</div>
 
@@ -244,8 +340,41 @@
 			List of Nodes: <input type="text" id="edit_node_list"></br>
 			Gateway MAC: <input type="text" id="edit_gateway_mac"></br>
 			Gateway IP: <input type="text" id="edit_gateway_ip"></br>
-			<input type="submit" value="Edit">	
+			<input type="submit" value="Submit">	
 		</form>
 		</div>
+
+
+		<div class="wrap">
+
+  <h1>Modal - Pure CSS (no Javascript)</h1>
+  
+  <p>Example of modal in CSS only, here I use the pseudo selector ":target" and no javascript for modal action.</p>
+  
+  <p>This works in IE9+ and all modern browsers.</p>
+  
+  <hr />
+
+  <a href="#modal-one" class="btn btn-big">Modal!</a>
+  
+</div>
+
+<div class="modal" id="modal-one" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h2>Modal in CSS?</h2>
+      <a href="#close" class="btn-close" aria-hidden="true">×</a> <!--CHANGED TO "#close"-->
+    </div>
+    <div class="modal-body">
+      <p>One modal example here! :D</p>
+    </div>
+    <div class="modal-footer">
+      <a href="#close" class="btn">Nice!</a>  <!--CHANGED TO "#close"-->
+    </div>
+    </div>
+  </div>
+
+
+	</div>
 	</body>
 </html>

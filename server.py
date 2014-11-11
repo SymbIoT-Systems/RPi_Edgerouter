@@ -317,11 +317,22 @@ def data_get():
 def data_edit():
     conn = sqlite3.connect('gateway.db')
     idno=(request.form['idno'])
-    nodeid=(request.form['nodeid'])
-    dev_id=(request.form['dev_id'])
-    node_prop=request.form['nodeprop']
-    node_type=request.form['nodetype']
-    conn.execute("UPDATE NODEDETAILS SET NODE_NUM = "+nodeid+" ,DEV_ID = "+dev_id+", NODE_TYPE = '"+node_type+"', SPECIAL_PROP = '" + node_prop + "' WHERE ID="+ idno +";")
+    table=request.form['data']
+    if table == "nodeedit":
+        nodeid=(request.form['nodeid'])
+        dev_id=(request.form['dev_id'])
+        node_prop=request.form['nodeprop']
+        node_type=request.form['nodetype']
+        conn.execute("UPDATE NODEDETAILS SET NODE_NUM = "+nodeid+" ,DEV_ID = "+dev_id+", NODE_TYPE = '"+node_type+"', SPECIAL_PROP = '" + node_prop + "' WHERE ID="+ idno +";")
+        print "done"
+    elif table == "clusteredit":
+        clusterno=request.form['clusterno']
+        clusterhead_no=request.form['clusterhead_no']
+        head_dev_id=request.form['head_dev_id']
+        node_list=request.form['node_list']
+        gateway_mac=request.form['gateway_mac']
+        gateway_ip=request.form['gateway_ip']
+        conn.execute("UPDATE CLUSTERDETAILS SET CLUSTER_NO = " + clusterno + ",HEAD_NO = "+ clusterhead_no +",HEAD_DEVICEID = '"+ head_dev_id +"',NODE_LIST = '" + node_list + "',PI_MAC = '" + gateway_mac + "',PI_IP = '" + gateway_ip+"' WHERE ID="+ idno +";")
     conn.commit()
     conn.close()
     return "Done"
