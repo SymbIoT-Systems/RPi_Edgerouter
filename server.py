@@ -120,11 +120,17 @@ def isNodeAlive(nodenum):
         proc1=subprocess.Popen(["tos-deluge serial@"+usb_path_base+":115200 -sr 0"],stdout=subprocess.PIPE,shell = True)
         out1 = proc1.communicate()[0]
     
-    #proc=subprocess.Popen(["tos-deluge serial@"+usb_path_base+":115200 -pr "+str(nodenum)],stdout=subprocess.PIPE,shell = True)
-    proc=subprocess.Popen(["sym-deluge ping "+str(nodenum)],stdout=subprocess.PIPE,shell = True)
+    proc=subprocess.Popen(["tos-deluge serial@"+usb_path_base+":115200 -pr "+str(nodenum)],stdout=subprocess.PIPE,shell = True)
+    #proc=subprocess.Popen(["sym-deluge ping "+str(nodenum)],stdout=subprocess.PIPE,shell = True)
     out=proc.communicate()[0]
-
+    if "Battery:" in out:
+        out=out[84:]
     if "Command sent" in out:
+        battery=(int(out.split('\n')[0])/4095)*100
+        conn = sqlite3.connect('gateway.db')
+        conn.execute("UPDATE NODEDETAILS SET BATTERY_STATUS = \'" + str(battery) + "%\' WHERE NODE_NUM='"+str(nodenum)+"'")
+        conn.commit()
+        conn.close()
         #out="\nPinged " + str(nodenum) + " successfully!"
         out = "Alive "
     else:
