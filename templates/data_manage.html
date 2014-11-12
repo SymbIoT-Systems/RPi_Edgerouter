@@ -1,18 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
+		<!-- Force Cache Reload -->
+		<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+		<meta http-equiv="Pragma" content="no-cache" />
+		<meta http-equiv="Expires" content="0" />
+
 		<h1>Database Management</h1>
+
 		<link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
           rel="stylesheet">
-	<link rel="stylesheet" type="text/css" href="/static/style.css">
-	<link rel="stylesheet" type="text/css" href="/static/modal.css">
+		<link rel="stylesheet" type="text/css" href="/static/style.css">
+		<link rel="stylesheet" type="text/css" href="/static/modal.css">
 
-	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 	
 
-	<script>
-	var jsondata;
-	var jsondatacluster;
+		<script>
+		var jsondata;
+		var jsondatacluster;
 
 		function editclick(name){
 			$("#editform").show();
@@ -35,10 +41,10 @@
 		}
 
 	$(document).ready(function(){
-		$("#data_add_form").hide();
-		$("#editform").hide();
-		$("#cluster_add_form").hide();
-		$('#clustereditform').hide();
+		// $("#data_add_form").hide();
+		// $("#editform").hide();
+		// $("#cluster_add_form").hide();
+		// $('#clustereditform').hide();
 
 		function getnodedata(){
 			$.post('/data_get/',{data:'nodesdata'},function(result,status){
@@ -267,119 +273,155 @@
 
 	<body>
 	<div class="container">
-		
-		<form action="/data_add/" method="post" name="data_add_form" id="data_add_form">
-			<h1>NODES FORM</h1>
-			Node ID: <input type="number" id="nodeid"></br>
-			Device ID: <input type="number" id="dev_id"></br>
-			Node Type: <input type="text" id="nodetype"></br>
-			Special Properties: <input type="text" id="nodeprop"></br>
 
-			<input type="submit" value="Submit">	
-		</form>
+		<!-- Modal Forms -->
 
-		
-		<form action="/data_add/" method="post" name="cluster_add_form" id="cluster_add_form">
-			<h1>CLUSTER FORM</h1>
-			Cluster No: <input type="number" id="cluster_no"></br>
-			Cluster Head No: <input type="number" id="clusterhead_no"></br>
-			Cluster Head Device ID: <input type="text" id="head_dev_id"></br>
-			List of Nodes: <input type="text" id="node_list"></br>
-			Gateway MAC: <input type="text" id="gateway_mac"></br>
-			Gateway IP: <input type="text" id="gateway_ip"></br>
-			<input type="submit" value="Submit">	
-		</form>
+		<!-- Node Data Add Form -->
+		<section class="modal--show" id="modal-node-add" tabindex="-1" role="dialog" aria-labelledby="modal-label" aria-hidden="true">
 
-		</br>
-		</br>
+	    	<div class="modal-inner">
+		        <h2><header id="modal-label"><!-- Header -->Add Node Data</header></h2>
+
+	        <div class="modal-content"><!-- The modals content -->
+				<form action="/data_add/" method="post" name="data_add_form" id="data_add_form">
+					NODES FORM</br>
+					Node ID: <input type="number" id="nodeid">
+					Device ID: <input type="text" id="dev_id"></br>
+					Node Type: <input type="text" id="nodetype">
+					Special Properties: <input type="text" id="nodeprop">
+
+					<input type="submit" value="Submit" class="formButton"><a href="#" class="formButton" title="Close">Close</a>	
+				</form>
+			</div>
+			</br>
+       	<!-- Footer -->
+        <!-- <footer><center><a href="#" class="formButton" title="Close">Close</a></center></footer>-->
+    	</div>
+    	<!-- Close Button -->
+    	<a href="#" class="modal-close" title="Close this modal" data-close="Close"
+        data-dismiss="modal">?</a>
+		</section>
+
+		<!-- Cluster Data Add Form -->
+		<section class="modal--show" id="modal-cluster-add" tabindex="-1" role="dialog" aria-labelledby="modal-label" aria-hidden="true">
+
+	    	<div class="modal-inner">
+		        <h2><header id="modal-label"><!-- Header -->Add Cluster Data</header></h2>
+
+	        <div class="modal-content"><!-- The modals content -->
+				<form action="/data_add/" method="post" name="cluster_add_form" id="cluster_add_form">
+					CLUSTER FORM</br>
+					Cluster No: <input type="number" id="cluster_no">
+					Cluster Head No: <input type="number" id="clusterhead_no"></br>
+					Cluster Head Device ID: <input type="text" id="head_dev_id">
+					List of Nodes: <input type="text" id="node_list">
+					Gateway MAC: <input type="text" id="gateway_mac">
+					Gateway IP: <input type="text" id="gateway_ip">
+					<input type="submit" value="Submit" class="formButton"><a href="#" class="formButton" title="Close">Close</a>	
+				</form>
+			</div>
+			</br>
+       	<!-- Footer -->
+        <!-- <footer><center><a href="#" class="formButton" title="Close">Close</a></center></footer>-->
+    	</div>
+    	<!-- Close Button -->
+    	<a href="#" class="modal-close" title="Close this modal" data-close="Close"
+        data-dismiss="modal">?</a>
+
+		</section>
+
+		<!-- Node Data Edit Form -->
+
+	  	<section class="modal--show" id="modal-node-edit" tabindex="-1" role="dialog" aria-labelledby="modal-label" aria-hidden="true">
+
+	    <div class="modal-inner">
+	        <h2><header id="modal-label"><!-- Header --> Edit Cluster Details</header></h2>
+
+	        <div class="modal-content"><!-- The modals content -->
+	        	
+	        	<div id="editform" name="editform">
+				
+					<form action="/data_edit/" method="post" name="data_edit_form" id="data_edit_form">
+						Row ID:<input type="number" id="edit_idno" disabled>
+						Node ID: <input type="number" id="edit_nodeid">
+						Device ID: <input type="text" id="edit_dev_id"></br>
+						Node Type: <input type="text" id="edit_nodetype">
+						Special Properties: <input type="text" id="edit_nodeprop">
+
+					<input type="submit" value="Submit" class="formButton"><a href="#" class="formButton" title="Close">Close</a>	
+					</form>
+				</div>
+			</br>
+	        </div>
+	    	</br>
+	    	<!-- Footer -->
+	        <!-- <footer><center><a href="#" class="formButton" title="Close">Close</a></center></footer>-->
+	    </div>
+
+	    <a href="#" class="modal-close" title="Close this modal" data-close="Close"
+	        data-dismiss="modal">?</a>
+		</section>
+
+
+	  	<section class="modal--show" id="modal-cluster-edit" tabindex="-1" role="dialog" aria-labelledby="modal-label" aria-hidden="true">
+
+	    <div class="modal-inner">
+	        <h2><header id="modal-label"><!-- Header --> Edit Testbed Details</header></h2>
+
+	        <div class="modal-content"><!-- The modals content -->
+	        	<div id="clustereditform" name="clustereditform">
+					<form action="/data_edit/" method="post" name="cluster_edit_form" id="cluster_edit_form">
+						Row ID:<input type="number" id="edit_cluster_idno" disabled>
+						Cluster No: <input type="number" id="edit_cluster_no">
+						Cluster Head No: <input type="number" id="edit_clusterhead_no"></br>
+						Cluster Head Device ID: <input type="text" id="edit_head_dev_id">
+						List of Nodes: <input type="text" id="edit_node_list">
+						Gateway MAC: <input type="text" id="edit_gateway_mac">
+						Gateway IP: <input type="text" id="edit_gateway_ip">
+						<input type="submit" value="Submit" class="formButton"><a href="#" class="formButton" title="Close">Close</a>	
+					</form>
+				</div>
+			</br>
+	        </div>
+	    	</br>
+	    	<!-- Footer -->
+	        <!-- <footer><center><a href="#" class="formButton" title="Close">Close</a></center></footer>-->
+	    </div>
+
+	    <a href="#" class="modal-close" title="Close this modal" data-close="Close"
+	        data-dismiss="modal">?</a>
+		</section>
+
+		<!-- Visible Node Data Table -->
 
 		<div class="expandable-panel" id="cp-1">
 
         	<div class="expandable-panel-heading">
-        	  <h2>Cluster Description<span class="icon-close-open"></span></h2>
+        	  <h2>Cluster Description<a href="#modal-node-add" class="panelButton" title="Add Node Data" >Add Node Data</a><span class="icon-close-open"></span></h2>
         	</div>
 
 	        <div class="expandable-panel-content">
+	        </br>
 	        	<div id="nodesdata"></div>
 	        </br>
 	    	</div>
 	    </div>
 
+	    <!-- Visible Cluster Data Table -->
+
 	    <div class="expandable-panel" id="cp-2">
 
         	<div class="expandable-panel-heading">
-        	  <h2>Testbed Description<span class="icon-close-open"></span></h2>
+        	  <h2>Testbed Description<a href="#modal-cluster-add" class="panelButton" title="Add Cluster Details" >Add Cluster Data<span class="icon-close-open"></a></span></h2>
         	</div>		
         	<div class="expandable-panel-content">
         		<div id="clustersdata"></div>
         	</div>
         </div>
 
-		</br>
-		</br>
-
-		<div id="editform" name="editform" class="popup">
-			
-			<form action="/data_edit/" method="post" name="data_edit_form" id="data_edit_form">
-			Row ID:<input type="number" id="edit_idno" disabled></br>	
-			Node ID: <input type="number" id="edit_nodeid"></br>
-			Device ID: <input type="number" id="edit_dev_id"></br>
-			Node Type: <input type="text" id="edit_nodetype"></br>
-			Special Properties: <input type="text" id="edit_nodeprop"></br>
-
-			<input type="submit" value="Submit">	
-		</form>
-		</div>
-
-		<div id="clustereditform" name="clustereditform" class="popup">
-			
-			<form action="/data_edit/" method="post" name="cluster_edit_form" id="cluster_edit_form">
-			Row ID:<input type="number" id="edit_cluster_idno" disabled></br>	
-			Cluster No: <input type="number" id="edit_cluster_no"></br>
-			Cluster Head No: <input type="number" id="edit_clusterhead_no"></br>
-			Cluster Head Device ID: <input type="text" id="edit_head_dev_id"></br>
-			List of Nodes: <input type="text" id="edit_node_list"></br>
-			Gateway MAC: <input type="text" id="edit_gateway_mac"></br>
-			Gateway IP: <input type="text" id="edit_gateway_ip"></br>
-			<input type="submit" value="Submit">	
-		</form>
-		</div>
-		<hr>
-
-	<center><a href="#modal-text" class="formButton" title="Clicking this link shows the modal" >Edit Form</a></center>
-
-  	<section class="modal--show" id="modal-text" tabindex="-1"
-        role="dialog" aria-labelledby="modal-label" aria-hidden="true">
-
-    <div class="modal-inner">
-        <h2><header id="modal-label"><!-- Header --> Edit Cluster Details</header></h2>
-
-        <div class="modal-content"><!-- The modals content -->
-        	
-        	<div id="editform" name="editform" class="popup">
-			
-				<form action="/data_edit/" method="post" name="data_edit_form" id="data_edit_form">
-					Row ID:<input type="number" id="edit_idno" disabled>
-					Node ID: <input type="number" id="edit_nodeid">
-					Device ID: <input type="number" id="edit_dev_id"></br>
-					Node Type: <input type="text" id="edit_nodetype">
-					Special Properties: <input type="text" id="edit_nodeprop">
-
-				<input type="submit" value="Submit" class="formButton"><a href="#" class="formButton" title="Close">Close</a>	
-				</form>
-			</div>
-		</br>
-        </div>
-    	</br>
-    	<!-- Footer -->
-        <!-- <footer><center><a href="#" class="formButton" title="Close">Close</a></center></footer>-->
-    </div>
-
-    <a href="#" class="modal-close" title="Close this modal" data-close="Close"
-        data-dismiss="modal">?</a>
-	</section>
-
-  
-  	</div>
+	<hr>
+	<!-- Container Div ends -->
+  	</div> 
+  	<!-- Body Ends -->
   	</body>
 </html>
