@@ -5,6 +5,7 @@
 		<link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
           rel="stylesheet">
 	<link rel="stylesheet" type="text/css" href="/static/style.css">
+	<link rel="stylesheet" type="text/css" href="/static/modal.css">
 
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 	
@@ -343,38 +344,42 @@
 			<input type="submit" value="Submit">	
 		</form>
 		</div>
+		<hr>
 
+	<center><a href="#modal-text" class="formButton" title="Clicking this link shows the modal" >Edit Form</a></center>
 
-		<div class="wrap">
+  	<section class="modal--show" id="modal-text" tabindex="-1"
+        role="dialog" aria-labelledby="modal-label" aria-hidden="true">
 
-  <h1>Modal - Pure CSS (no Javascript)</h1>
-  
-  <p>Example of modal in CSS only, here I use the pseudo selector ":target" and no javascript for modal action.</p>
-  
-  <p>This works in IE9+ and all modern browsers.</p>
-  
-  <hr />
+    <div class="modal-inner">
+        <h2><header id="modal-label"><!-- Header --> Edit Cluster Details</header></h2>
 
-  <a href="#modal-one" class="btn btn-big">Modal!</a>
-  
-</div>
+        <div class="modal-content"><!-- The modals content -->
+        	
+        	<div id="editform" name="editform" class="popup">
+			
+				<form action="/data_edit/" method="post" name="data_edit_form" id="data_edit_form">
+					Row ID:<input type="number" id="edit_idno" disabled>
+					Node ID: <input type="number" id="edit_nodeid">
+					Device ID: <input type="number" id="edit_dev_id"></br>
+					Node Type: <input type="text" id="edit_nodetype">
+					Special Properties: <input type="text" id="edit_nodeprop">
 
-<div class="modal" id="modal-one" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-header">
-      <h2>Modal in CSS?</h2>
-      <a href="#close" class="btn-close" aria-hidden="true">×</a> <!--CHANGED TO "#close"-->
+				<input type="submit" value="Submit" class="formButton"><a href="#" class="formButton" title="Close">Close</a>	
+				</form>
+			</div>
+		</br>
+        </div>
+    	</br>
+    	<!-- Footer -->
+        <!-- <footer><center><a href="#" class="formButton" title="Close">Close</a></center></footer>-->
     </div>
-    <div class="modal-body">
-      <p>One modal example here! :D</p>
-    </div>
-    <div class="modal-footer">
-      <a href="#close" class="btn">Nice!</a>  <!--CHANGED TO "#close"-->
-    </div>
-    </div>
-  </div>
 
+    <a href="#" class="modal-close" title="Close this modal" data-close="Close"
+        data-dismiss="modal">?</a>
+	</section>
 
-	</div>
-	</body>
+  
+  	</div>
+  	</body>
 </html>
