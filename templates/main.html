@@ -5,8 +5,12 @@
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
           rel="stylesheet">
     <!-- Local stylesheet -->
+    <!-- <link rel="stylesheet" type="text/css" href="static/bootstrap.min.js"> -->
     <link rel="stylesheet" type="text/css" href="static/style.css">
     
+   <!--  <script src="static/jquery.min.js"></script>
+    <script type="text/javascript" src="socket.io.min.js"></script> -->
+
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
     <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
     
@@ -20,7 +24,15 @@
             return false;
         }
     }
-    
+    function allbuttonsblock(booleanval) {
+        $("#FlashButton").prop("disabled",booleanval);
+        $("#switch").prop("disabled",booleanval);
+        $("#ping").prop("disabled",booleanval);
+        $("#listen").prop("disabled",booleanval);
+        $("#logfile").prop("disabled",booleanval);
+        $("#FileButton").prop("disabled",booleanval); 
+    }
+
     $(document).ready(function(){
       
       //Table for Cluster Status
@@ -48,50 +60,42 @@
       $(html).appendTo('#table1');
       
       //Flash Initiated
-      if ($("#consolebox").text().indexOf("Flash Initiated")>=0) 
+      // if ($("#consolebox").text().indexOf("Flash Initiated")>=0)
+      if (("{{flashstarted}}").indexOf("True")>=0) 
       {
         // Once flash initiated:
         //Disable all buttons...trust me...it's for their own good..
         $("#FlashButton").prop("disabled",true);
         $("#bar").show();
-        $("#switch").prop("disabled",true);
-        $("#ping").prop("disabled",true);
-        $("#listen").prop("disabled",true);
-        $("#logfile").prop("disabled",true);
-        $("#FileButton").prop("disabled",true);
-        
-      $.post("/flashnode/",{data:'1'},function(result, status){
+        allbuttonsblock(true);
+
+      $.post("/flashnode/",{data:'dummydata'},function(result, status){
         $("#consolebox").append(result.replace(/\n/g, "</br>"));
 
-        $.post("/ackreceived/",{data:'1'},function(result,status){
+        $.post("/ackreceived/",{data:'dumydata'},function(result,status){
           alert("Node no."+result+" flashed succesfully!");
           $("#bar").hide();
-          $("#FlashButton").prop("disabled",false);
-          $("#switch").prop("disabled",false);
-          $("#ping").prop("disabled",false);
-          $("#listen").prop("disabled",false);
-          $("#logfile").prop("disabled",false);
-          $("#FileButton").prop("disabled",false);
-          
+          allbuttonsblock(false);  
          });
       });
       }
       else{
         $("#bar").hide();
-        isclusteralive();
+        // isclusteralive(); 
+        // Un-comment for actual working^
       }
 
-      $("#ping").prop("disabled",true);
       function isclusteralive (argument) {
+        allbuttonsblock(true);
         var count=1;
         var intervalcluster=setInterval(function(){
           if(count==8){
             clearInterval(intervalcluster);
-            $("#ping").prop("disabled",false);
+            allbuttonsblock(false);
           }
           $.post("/cluster_status/",{data:count},function(result,status){
-            data1=$.parseJSON(result);
-              $('#status'+data1['1']).html(data1['0']);
+            dataformatted=$.parseJSON(result);
+              $('#status'+dataformatted['1']).html(dataformatted['0']);
         });
           count++;
         }
@@ -170,7 +174,7 @@
             panelinit();
         }); //END LOAD
 
-      var socket = io.connect('http://' + document.domain + ':' + location.port + '/test');
+      var socket = io.connect('http://' + document.domain + ':' + location.port + '/listen');
       $("#stoplisten").hide();
       socket.on('my response', function(msg) {
       $('#consolebox').append('<p>Received: ' + msg.data + '</p>');
@@ -186,13 +190,13 @@
       });
 
       $("#listen").click(function(){
-        $.post( "/start/",{data:'1'});
+        $.post( "/startlisten/",{data:'dummydata'});
         $("#stoplisten").show();
         $("#listen").hide();
       });
 
       $("#stoplisten").click(function(){
-        $.post("/stop/");
+        $.post("/stoplisten/");
         $("#listen").show();
         $("#stoplisten").hide();
       });
@@ -215,9 +219,9 @@
       /* Alerts the results */
       posting.done(function( data ) {
         clearInterval(interval);
-        data1=$.parseJSON(data);
-        $('#baseimage').html("</br>"+data1['baseimagedata'].replace(/\n/g, "</br>"));
-        $('#consolebox').html(data1['consoledata'].replace(/\n/g, "</br>"));
+        dataformatted=$.parseJSON(data);
+        $('#baseimage').html("</br>"+dataformatted['baseimagedata'].replace(/\n/g, "</br>"));
+        $('#consolebox').html(dataformatted['consoledata'].replace(/\n/g, "</br>"));
       });
     });
     
