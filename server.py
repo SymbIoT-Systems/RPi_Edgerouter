@@ -291,7 +291,7 @@ def data_add():
         node_prop=request.form['nodeprop']
         node_type=request.form['nodetype']
         # conn.execute("INSERT INTO NODESTATUS (NODE_NUM, CLUSTER_HEAD, NODE_TYPE, SPECIAL_PROP) VALUES (%d,%d,\'%s\',\'%s\')" % (int(request.form['nodeid']), int(request.form['clusterh_id']),request.form['nodetype'],request.form['nodeprop']))
-        conn.execute("INSERT INTO NODEDETAILS (NODE_NUM, DEV_ID, NODE_TYPE, SPECIAL_PROP) VALUES (" + nodeid + "," + dev_id + ",'" + node_type + "','" + node_prop + "')")
+        conn.execute("INSERT INTO NODEDETAILS (NODE_NUM, DEV_ID, NODE_TYPE, SPECIAL_PROP) VALUES (" + nodeid + ",'" + dev_id + "','" + node_type + "','" + node_prop + "')")
     elif table == "clusteradd":
         clusterno=request.form['clusterno']
         clusterhead_no=request.form['clusterhead_no']

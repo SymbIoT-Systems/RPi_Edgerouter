@@ -42,6 +42,7 @@ body  {
     clear:both;
     background-color:#E5E5E5;
     position:relative;
+    display: block;
 }
 .expandable-panel-heading:hover {
     color:#666;
@@ -54,6 +55,7 @@ body  {
 .expandable-panel-content {
     padding:0 15px 0 15px;
     margin-top:-999px;
+    height: auto;
 }
 .expandable-panel-content p {
     padding:4px 0 6px 0;
@@ -334,12 +336,12 @@ form    {
 background: -webkit-gradient(linear, bottom, left 175px, from(#CCCCCC), to(#EEEEEE));
 background: -moz-linear-gradient(bottom, #CCCCCC, #EEEEEE 175px);
 margin:auto;
-position:relative;
+/*position:relative;*/
 width:550px;
 /*height:450px;*/
 font-family: Tahoma, Geneva, sans-serif;
 font-size: 14px;
-/*display:block;*/
+display:block;
 line-height: 24px;
 font-weight: bold;
 color: #1F3D7A;
