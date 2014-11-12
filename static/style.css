@@ -1,8 +1,9 @@
 h2, p, ol, ul, li {
 	margin: 0px;
 	padding: 0px;
-	font-size: 13px;
-	font-family: Arial,Helvetica, sans-serif;
+	font-size: 20px;
+	font-family: Tahoma, Geneva, sans-serif;
+  font-weight: bold;
 }
 
 h1 {
@@ -15,10 +16,12 @@ body  {
     background-size: 100%;
     /*background-repeat: no-repeat;*/
     }
+
 #container {
 	width: 300px;
 	margin: auto;
 	margin-top: 100px;
+  vertical-align: middle;
 }
 
 /*COLLAPSIBLE PANELS*/
@@ -266,118 +269,84 @@ body  {
    overflow-x: hidden;
 }
 
-
-
-
-//
-// Variables
-// ----------------------
-
-@gray: #333;
-@gray-light: #aaa;
-@gray-lighter: #eee;
-@space: 40px;
-@blue: #428bca;
-@blue-dark: darken(@blue, 5%);
-
-// Mixin for transition/transform
-.translate(@x; @y) {
-  -webkit-transform: translate(@x, @y);
-      -ms-transform: translate(@x, @y); // IE9+
-          transform: translate(@x, @y);
+/*Buttons*/
+.formButton{
+  -moz-box-shadow: 0px 0px 14px 0px #71828a;
+  -webkit-box-shadow: 0px 0px 14px 0px #71828a;
+  box-shadow: 0px 0px 14px 0px #71828a;
+  background-color:#45a4c7;
+  -moz-border-radius:13px;
+  -webkit-border-radius:13px;
+  border-radius:13px;
+  border:2px solid #25a7c7;
+  display:inline-block;
+  cursor:pointer;
+  color:#ffffff;
+  font-family:arial;
+  font-size:17px;
+  padding:14px 31px;
+  text-decoration:none;
+  text-shadow:0px 2px 7px #6d9cd1;
+  margin: 10px;
 }
-.transition(@transition) {
-  -webkit-transition: @transition;
-          transition: @transition;
-}
-.transition-transform(@transition) {
-  -webkit-transition: -webkit-transform @transition;
-     -moz-transition: -moz-transform @transition;
-       -o-transition: -o-transform @transition;
-          transition: transform @transition;
-}
-.btn{
-  background: @blue;
-  border: @blue-dark solid 1px;
-  border-radius: 3px;
-  color: #fff;
-  display: inline-block;
-  font-size: 14px;
-  padding: 8px 15px;
+.formButton:hover {
+  background-color:#3caad6;
   text-decoration: none;
-  text-align: center;
-  min-width: 60px;
-  position: relative;
-  transition: color .1s ease;
- /* top: 40em;*/
-  
-  &:hover{
-    background: @blue-dark;
-  }
-  
-  &.btn-big{
-    font-size: 18px;
-    padding: 15px 20px;
-    min-width: 100px;
-  }
-  
 }
-
-.wrap{
-  padding: @space;
-  text-align: center;
-}
-.btn-close{
-  color: @gray-light;
-  font-size: 30px;
+.formButton:active {
+  position:relative;
+  top:1px;
   text-decoration: none;
-  position: absolute; right: 5px; top: 0;
-  
-  &:hover{
-     color: darken(@gray-light, 10%);
-  }
-  
 }
 
-.modal-dialog{
-  background: #fefefe;
-  border: @gray solid 1px;
-  border-radius: 5px;
-  margin-left: -200px;
-  position: fixed; 
-  left: 50%; 
-  top: -100%;  
-  z-index: 11; 
-  width: 360px;
-  .translate(0, -500%);
-  .transition-transform(~"0.3s ease-out");
+/*Forms*/
+form    {
+background: -webkit-gradient(linear, bottom, left 175px, from(#CCCCCC), to(#EEEEEE));
+background: -moz-linear-gradient(bottom, #CCCCCC, #EEEEEE 175px);
+margin:auto;
+position:relative;
+width:550px;
+/*height:450px;*/
+font-family: Tahoma, Geneva, sans-serif;
+font-size: 14px;
+/*display:block;*/
+line-height: 24px;
+font-weight: bold;
+color: #1F3D7A;
+text-decoration: none;
+-webkit-border-radius: 10px;
+-moz-border-radius: 10px;
+border-radius: 10px;
+padding:10px;
+border: 1px solid #999;
+border: inset 1px solid #333;
+-webkit-box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.3);
+-moz-box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.3);
+box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.3);
 }
 
-.modal-body{
-  padding: @space/2;
+input[type="text"]    {
+width:375px;
+display:block;
+border: 1px solid #999;
+height: 25px;
+-webkit-box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.3);
+-moz-box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.3);
+box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.3);
+margin: 10px;
 }
 
-.modal-header,
-.modal-footer{
-  padding: @space/4 @space/2;
+input[type="number"]    {
+width:35px;
+display:inline;
+border: 1px solid #999;
+height: 25px;
+-webkit-box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.3);
+-moz-box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.3);
+box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.3);
+margin: 10px;
 }
 
-.modal-header{
-  border-bottom: @gray-lighter solid 1px;
-  
-  h2{
-    font-size: 20px;
-  }
-  
+textarea:focus, input:focus {
+border: 1px solid #09C;
 }
-
-.modal-footer{
-  border-top: @gray-lighter solid 1px;
-  text-align: right;
-}
-
-/*ADDED TO STOP SCROLLING TO TOP*/
-#close {
-  display: none; 
-}
-
