@@ -14,27 +14,35 @@ port1 = "8088"
 def print_device_event(device):
 	print('background event {0.action}: {0.device_path}'.format(device))
 	if device.action=='add':
+
 		print "\nDevice Added..."
-		proc = subprocess.Popen(['motelist'],stdout=subprocess.PIPE,shell=True)
+		proc = subprocess.Popen(['motelist|grep "/dev/ttyUSB"'],stdout=subprocess.PIPE,shell=True)
 		(out,err) = proc.communicate()
-		dev = out.find("/dev/ttyUSB")
-		#print dev
-		out = out[dev:dev+12]
-		print "\n"+out
+		# dev = out.find("/dev/ttyUSB")
+
+		dev = out.split("\n")
+		# print dev
+
+		base_index = dev[0].find("/dev/ttyUSB")
+		base_add = dev[0][base_index:base_index+12]
+		print base_add
+
+		sniff_index = dev[1].find("/dev/ttyUSB")
+		sniff_add = dev[1][sniff_index:sniff_index+12]
+		print sniff_add
+
+		proc = subprocess.Popen(['tos-deluge serial@'+base_add+":115200 -id"],stdout=subprocess.PIPE,shell=True)
+		(out,err) = proc.communicate()
+
+		if "ERROR" in out:
+			#This is not the basestation, swap the addresses
+			(base_add,sniff_add) = (sniff_add,base_add) 
+
 		usb_status_file=open("usb_status","w+")
-		usb_status_file.write(out)
+		usb_status_file.write(base_add+"\n")
+		usb_status_file.write(sniff_add)
 		usb_status_file.close()
-		#os.environ["motepath"]=out
-		# session.head('http://localhost:5000/automount')
-
-		# response = session.post(
-		# url='http://localhost:'+port1+'/automount',
-		# data={
-		# 'port':out,
-		# 'status':'Added'
-		# }
-		# )
-
+		
 
 
 	elif device.action == 'remove':
@@ -42,16 +50,7 @@ def print_device_event(device):
 		usb_status_file=open("usb_status","w+")
 		usb_status_file.write("")
 		usb_status_file.close()
-		# session.head('http://localhost:5000/automount')
-
-		# response = session.post(
-		# url='http://localhost:'+port1+'/automount',
-		# data={
-		# 'port':'null',
-		# 'status':'Removed'
-		# }
-		# )
-
+		
 def initialize():
 	context = Context()
 	monitor = Monitor.from_netlink(context)
@@ -66,17 +65,17 @@ initialize()
 
 while True:
 	a = 1
-# 	try:
-# 		print "."
-# 		sleep(2)
+	# try:
+	# 	print "."
+	# 	sleep(2)
 
-# 	except KeyboardInterrupt:
-# 		print "\n\nExiting gracefully"
-# 		for i in range(1,19):
-# 			sys.stdout.write('.')
+	# except KeyboardInterrupt:
+	# 	print "\n\nExiting gracefully"
+	# 	for i in range(1,19):
+	# 		sys.stdout.write('.')
 
-# 		print "\n"
-# 		sys.exit(0)
+	# 	print "\n"
+	# 	sys.exit(0)
 
 
 if __name__ == "__main__":
@@ -93,12 +92,27 @@ if __name__ == "__main__":
 # print device1.tags
 
 #Ensure that the initial base path while launching the server is correct
-proc = subprocess.Popen(['motelist'],stdout=subprocess.PIPE,shell=True)
+proc = subprocess.Popen(['motelist|grep "/dev/ttyUSB"'],stdout=subprocess.PIPE,shell=True)
 (out,err) = proc.communicate()
-dev = out.find("/dev/ttyUSB")
-#print dev
-out = out[dev:dev+12]
-# print "\n"+out
+
+dev = out.split("\n")
+# print dev
+
+base_index = dev[0].find("/dev/ttyUSB")
+base_add = dev[0][base_index:base_index+12]
+print base_add
+
+sniff_index = dev[1].find("/dev/ttyUSB")
+sniff_add = dev[1][sniff_index:sniff_index+12]
+print sniff_add
+proc = subprocess.Popen(['tos-deluge serial@'+base_add+":115200 -id"],stdout=subprocess.PIPE,shell=True)
+(out,err) = proc.communicate()
+
+if "ERROR" in out:
+	#This is not the basestation, swap the addresses
+	(base_add,sniff_add) = (sniff_add,base_add)
+
 usb_status_file=open("usb_status","w+")
-usb_status_file.write(out)
+usb_status_file.write(base_add+"\n")
+usb_status_file.write(sniff_add)
 usb_status_file.close()

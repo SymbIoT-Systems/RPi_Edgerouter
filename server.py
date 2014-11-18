@@ -17,7 +17,6 @@ import serial
 from flask.ext.socketio import SocketIO, emit
 from time import sleep
 import subprocess
-from pyudev import Context, Monitor, MonitorObserver, Device
 import sys
 import json
 import sqlite3
@@ -27,8 +26,11 @@ from gevent import monkey
 monkey.patch_all()
 import paho.mqtt.client as mqtt
 import urlparse
-#Global variable declarations
 import zlib
+
+#Global variable declarations
+node_list = []
+cluster_id = 1
 
 templateData = {
     'consoledata':"Nothing yet"+"\n",
@@ -52,6 +54,7 @@ app.config['SECRET_KEY']="secret!"
 socketio=SocketIO(app)
 listenrequest=False
 flashresponse=False
+ackrequired=False
 mqttc = mqtt.Client()
 
 #Database initialisation
@@ -89,11 +92,8 @@ def BaseStationAllDetails():
     data = {
     'Basenodeid': '0',
     'Progname1':'1',
-    'Compiletime1':'1',
     'Progname2':'2',
-    'Compiletime2':'2',
     'Progname3':'3',
-    'Compiletime3':'3',
     'Gatewaymac':'12:34:56:78:90:ab',
     'Gatewayip':'0.0.0.0'
     }
@@ -102,11 +102,10 @@ def BaseStationAllDetails():
         if a == "BaseStation Disconnected!":
             data['Basenodeid'] = "0"
             data['Progname'+str(i)] = str(i)
-            data['Compiletime'+str(i)] = str(i)
         else:
             data['Basenodeid'] = a[0]
-            data['Progname'+str(i)] = a[1]
-            data['Compiletime'+str(i)] = a[2]
+            data['Progname'+str(i)] = a[1]+"\n"+a[2]
+
     proc = subprocess.Popen(["ifconfig"],stdout=subprocess.PIPE, shell=True)
     (out,err) = proc.communicate()
 
@@ -151,10 +150,11 @@ def MQTTInit():
     mqttc.connect(url.hostname, url.port)
 
     #Channels to subscribe
-    mqttc.subscribe("commands/1", 0)
-    mqttc.subscribe("files/1",0)
+    mqttc.subscribe("register_response",0)
     mqttc.loop_start()
-    mqttc.publish("commands/1","connect from gateway")
+    
+
+
 
 def gateway_init():
     MQTTInit()    
@@ -169,12 +169,12 @@ def on_connect(mosq, obj,flags,rc):
     if flashresponse:
         output = {'data':"Injection complete,Flash initiated!"}
         print output
-        mqttc.publish("response/1","flash " + json.dumps(output))
+        mqttc.publish("response/"+str(cluster_id),"flash " + json.dumps(output))
         flashresponse=False
 
 def on_message(mosq, obj, msg):
     print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
-    if (msg.topic) == "files/1":
+    if (msg.topic) == "files/"+str(cluster_id):
         fd=open("uploads/tos_image_1.xml","w+")
 
         checksum = zlib.crc32(msg.payload, 0xFFFF)
@@ -202,6 +202,18 @@ def on_message(mosq, obj, msg):
     elif "ackreceived" in str(msg.payload):
         ackreceived()
 
+    elif msg.topic == "register_response":
+        print msg.payload
+        a=json.loads(msg.payload)
+
+        global node_list,cluster_id
+
+        node_list = a['listofnodes']
+        cluster_id = a['clusterid']
+
+        mqttc.subscribe("commands/" +str(cluster_id), 0)
+        mqttc.subscribe("files/"+str(cluster_id),0)
+
 
 def on_publish(mosq, obj, mid):
     print("mid: " + str(mid))
@@ -217,35 +229,18 @@ def uploadtomote(slotnum,imgpath):
     # out.replace()
     # out = "Hello"
     # out = out.replace("\n",'</br>')
-
+    output = {'data':"Injection complete,Flash initiated!"}
+    print output
+    mqttc.publish("response/"+str(cluster_id),"flash " + json.dumps(output))
     global flashresponse
     flashresponse=True
-
-#If a user initiates the listen process this function reads data from serial and pushes it to the client through the socket
-def serial_socket():
-    line=[]
-    while listenrequest:
-        if listenrequest==True:
-            for c in ser.read(1):
-                line.append(c.encode('hex'))
-                if c.encode('hex')=="7e":
-                    if line.count('7e')==2:
-                        packetdata=''.join(line)
-                        if packetdata.count('00')>4:
-                            packetdata = re.sub('[00]', '', packetdata)
-                        mqttc.publish("listen/1",packetdata)
-                        ser.flush()
-                        conn = sqlite3.connect('gateway.db')
-                        conn.execute("INSERT INTO LISTENDATA (DATA) VALUES (\'"+packetdata+"\')")
-                        conn.commit()
-                        conn.close()
-                        line=[]
 
 def isNodeAlive(nodenum):
     
     proc=subprocess.Popen(["tos-deluge serial@"+usb_path_base+":115200 -pr "+str(nodenum)],stdout=subprocess.PIPE,shell = True)
     #proc=subprocess.Popen(["sym-deluge ping "+str(nodenum)],stdout=subprocess.PIPE,shell = True)
     out=proc.communicate()[0]
+    print out
     if "Battery:" in out:
         out=out[84:]
     if "Command sent" in out:
@@ -269,21 +264,27 @@ def BaseStationDetails(imagenum):
     return out
 
 def basepathdetect():
-    global usb_path_base
+    global usb_path_base,usb_path_sniffer
     usb_status_file=open("usb_status","r")
     usb_path_base=usb_status_file.read(12)
     print usb_path_base
+    usb_status_file.read(1)
+    usb_path_sniffer=usb_status_file.read(12)
+    print usb_path_sniffer
     usb_status_file.close()
+
+    if usb_path_sniffer == "":
+        usb_path_sniffer="/dev/ttyUSB1"
 
     if usb_path_base == "":
         usb_path_base="/dev/ttyUSB0"
         global templateData
-        templateData['consoledata']+="Basestation Disconnected\n"
+        templateData['consoledata']="Basestation Disconnected\n"
         templateData['baseimagedata']="Basestation Disconnected\n"
     else:
-        templateData['consoledata']+="Basestation connected at "+ usb_path_base+"\n"
+        templateData['consoledata']="Basestation connected at "+ usb_path_base+"\n"
         templateData['baseimagedata']="Basestation connected at "+ usb_path_base+"\n"
-    mqttc.publish("response/1","usbbasepath"+json.dumps(templateData))
+    mqttc.publish("response/"+str(cluster_id),"usbbasepath"+json.dumps(templateData))
 
 gateway_init()
 
@@ -292,7 +293,7 @@ def pingall(imagenum):
     status=[]
     status.append(isNodeAlive(imagenum))
     status.append(imagenum)
-    mqttc.publish("response/1","ping "+json.dumps(status))
+    mqttc.publish("response/"+str(cluster_id),"ping "+json.dumps(status))
 
 def switch(imagenum):
     basepathdetect()
@@ -304,39 +305,27 @@ def switch(imagenum):
         'consoledata':out,
         'baseimagedata':imageinfo
     }
-    mqttc.publish("response/1","switch "+json.dumps(switchData))
+    mqttc.publish("response/"+str(cluster_id),"switch "+json.dumps(switchData))
 
 def startlisten():
     basepathdetect()
-    global ser
-    ser=serial.Serial(port=usb_path_base,baudrate=115200)
+    # global ser
+    # ser=serial.Serial(port=usb_path_base,baudrate=115200)
     global listenrequest
     listenrequest=True
-    serial_socket()
+    # serial_socket()
 
 def stoplisten():
-    global ser
+    # global ser
     global listenrequest
     listenrequest=False
-    ser.close()
+    # ser.close()
 
 def ackreceived():
     basepathdetect()
-    line=[]
-    ser1=serial.Serial(port=usb_path_base,baudrate=115200)
-    while True:
-        for c in ser1.read():
-            line.append(c.encode('hex'))
-            if c.encode('hex')=="7e":
-                if line.count('7e')==2:
-                    packet=''.join(line)
-                    print packet
-                    if packet[24:30]=="003f53":
-                        print packet[22:24]
-                        ser1.close()
-                        mqttc.publish("response/1","ackreceived "+packet[22:24])
-                    line=[] 
-                    packet=""
+    global ackrequired
+    ackrequired = True
+
 
 @app.route('/data_manage/')
 def data_manage():
@@ -385,15 +374,46 @@ def data_edit():
     conn.close()
     return "Done"
 
+#If a user initiates the listen process this function reads data from serial and pushes it to the client through the socket
+def serial_socket():
+    line=[]
+    ser = serial.Serial(port=usb_path_sniffer,baudrate=115200)
+    global ackrequired,listenrequest
+    while True:
+        for c in ser.read(1):
+            line.append(c.encode('hex'))
+            if c.encode('hex')=="7e":
+                if line.count('7e')==2:
+                    packetdata=''.join(line)
+                    if packetdata.count('00')>8:
+                        packetdata = re.sub('[00]', '', packetdata)
+
+                    if listenrequest == True:
+                        mqttc.publish("listen/"+str(cluster_id),packetdata)
+                        conn = sqlite3.connect('gateway.db')
+                        conn.execute("INSERT INTO LISTENDATA (DATA) VALUES (\'"+packetdata+"\')")
+                        conn.commit()
+                        conn.close()
+                    elif ackrequired == True:
+                        print packetdata
+                        if packetdata.find("3f53")>0:
+                            ack_index = packetdata.find("3f53")
+                            mqttc.publish("response"+str(cluster_id),"ackreceived "+str(packetdata[ack_index-4:ack_index]))
+                            
+                    else:
+                        if packetdata.find("3f53")>0:
+                            ack_index = packetdata.find("3f53")
+                            if packetdata[ack_index+11]=="b":
+                                datapacket={
+                                    'nodeid':packetdata[ack_index+4:ack_index+8],
+                                    'batterystatus':packetdata[ack_index+12:ack_index+16]
+                                }
+                                mqttc.publish("response/"+str(cluster_id),"batterystatus "+json.dumps(datapacket))
+                    ser.flush()
+                    line=[]
+                                    
+serial_socket()
 
 if __name__ == '__main__':
-    proc = subprocess.Popen(["python USBAutoDetect.py"],stdout=subprocess.PIPE,shell = True)
-    socketio.run(app,host='0.0.0.0',port=8088)
-    # Continue the network loop, exit when an error occurs
-    # rc = 0
-    # while rc == 0:
-    #     rc = mqttc.loop()
-    # print("rc: " + str(rc))
-
-
-
+    subprocess.Popen(["python USBAutoDetect.py"],stdout=subprocess.PIPE,shell = True)
+    socketio.run(app,host='0.0.0.0',port=8088)    
