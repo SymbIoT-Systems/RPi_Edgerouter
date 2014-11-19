@@ -55,6 +55,7 @@ socketio=SocketIO(app)
 listenrequest=False
 flashresponse=False
 ackrequired=False
+checksumvalid=True
 mqttc = mqtt.Client()
 
 #Database initialisation
@@ -198,9 +199,23 @@ def on_message(mosq, obj, msg):
     elif "flash" in str(msg.payload):
         slotnum=str(msg.payload).replace("flash ",'')
         #global imagepath
-        uploadtomote(slotnum,"uploads/tos_image_1.xml")
+        if checksumvalid == True:
+            uploadtomote(slotnum,"uploads/tos_image_1.xml")
+        else:
+            output = {'data':"Injection Not complete, Please Reflash"}
+            mqttc.publish("response/"+str(cluster_id),"flash " + json.dumps(output))
+
     elif "ackreceived" in str(msg.payload):
         ackreceived()
+    elif "checksum" in str(msg.payload):
+        checksum=str(msg.payload).replace("checksum ",'')
+        fd=open("uploads/tos_image_1.xml")
+        datastring = fd.read()
+        checksum_file = zlib.crc32(datastring, 0xFFFF)
+        global checksumvalid
+        if checksum != checksum_file:
+            checksumvalid=False
+
 
     elif msg.topic == "register_response":
         print msg.payload
