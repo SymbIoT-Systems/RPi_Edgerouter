@@ -74,19 +74,13 @@ if (file_status == False):
         (ID INTEGER PRIMARY KEY AUTOINCREMENT,
             DATE TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             DATA TEXT NOT NULL);''')
-    conn.execute('''CREATE TABLE CLUSTERDETAILS
+    conn.execute('''CREATE TABLE ACTIVITYLOG
         (ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            CLUSTER_NO INT NOT NULL,
-            HEAD_NO INT NOT NULL,
-            HEAD_DEVICEID TEXT,
-            NODE_LIST TEXT NOT NULL,
-            PI_MAC TEXT,
-            PI_IP TEXT,
-            SLOT1 TEXT,
-            SLOT2 TEXT,
-            SLOT3 TEXT);''')
+            ACTIVITY TEXT NOT NULL,
+            DATE TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);''')
     conn.close()
   
+conn=sqlite3.connect('gateway.db')
 #Function Definitions
 def BaseStationAllDetails():
     basepathdetect()
@@ -115,7 +109,7 @@ def BaseStationAllDetails():
     # print "MAC Address: " + mac +"\n"
     data['Gatewaymac']=mac
     ip_index = out.find("inet addr:")+len("inet addr:")
-    ip = out[ip_index:ip_index+len("192.168.137.104")]
+    ip = out[ip_index:ip_index+len("192.168.137.103")]
     data['Gatewayip']=ip
     print data
     return data
@@ -154,18 +148,17 @@ def MQTTInit():
     mqttc.subscribe("register_response",0)
     mqttc.loop_start()
     
-
-
-
 def gateway_init():
     MQTTInit()    
     data=BaseStationAllDetails()
     mqttc.publish('register',json.dumps(data))
 
-
 #MQTT Functions
 def on_connect(mosq, obj,flags,rc):
     print("rc: " + str(rc))
+    mqttc.subscribe("commands/" +str(cluster_id), 0)
+    mqttc.subscribe("files/"+str(cluster_id),0)
+
     global flashresponse
     if flashresponse:
         output = {'data':"Injection complete,Flash initiated!"}
@@ -183,6 +176,11 @@ def on_message(mosq, obj, msg):
         fd.write(msg.payload)
         fd.close()
        
+    if "files/" in msg.topic:
+        pass
+    else:
+        conn.execute('INSERT INTO ACTIVITYLOG (ACTIVITY) VALUES (\''+msg.topic+':'+msg.payload+'\')')
+        conn.commit()
 
     if str(msg.payload) == "usbbasepath":
         basepathdetect()
@@ -203,19 +201,29 @@ def on_message(mosq, obj, msg):
             uploadtomote(slotnum,"uploads/tos_image_1.xml")
         else:
             output = {'data':"Injection Not complete, Please Reflash"}
+            conn.execute('INSERT INTO ACTIVITYLOG (ACTIVITY) VALUES (\''+"response/"+str(cluster_id)+"flash " + json.dumps(output)+'\')')
             mqttc.publish("response/"+str(cluster_id),"flash " + json.dumps(output))
 
     elif "ackreceived" in str(msg.payload):
         ackreceived()
     elif "checksum" in str(msg.payload):
         checksum=str(msg.payload).replace("checksum ",'')
+        print checksum
         fd=open("uploads/tos_image_1.xml")
         datastring = fd.read()
         checksum_file = zlib.crc32(datastring, 0xFFFF)
         global checksumvalid
-        if checksum != checksum_file:
+        if str(checksum) != str(checksum_file):
             checksumvalid=False
-
+        print checksumvalid
+    elif "activitylog" in str(msg.payload):
+        cursor=conn.execute("SELECT * FROM ACTIVITYLOG")
+        mqttc.publish("response/"+str(cluster_id),"activitylog ")
+        tosend=""
+        for i in cursor.fetchall():
+            tosend+=str(i)
+            tosend+="\n"
+        mqttc.publish("response/"+str(cluster_id),tosend)
 
     elif msg.topic == "register_response":
         print msg.payload
@@ -226,12 +234,9 @@ def on_message(mosq, obj, msg):
         node_list = a['listofnodes']
         cluster_id = a['clusterid']
 
-        mqttc.subscribe("commands/" +str(cluster_id), 0)
-        mqttc.subscribe("files/"+str(cluster_id),0)
-
-
 def on_publish(mosq, obj, mid):
     print("mid: " + str(mid))
+    conn.commit()
 
 # def on_subscribe(mosq, obj, mid, granted_qos):
 #     print("Subscribed: " + str(mid) + " " + str(granted_qos))
@@ -246,6 +251,7 @@ def uploadtomote(slotnum,imgpath):
     # out = out.replace("\n",'</br>')
     output = {'data':"Injection complete,Flash initiated!"}
     print output
+    conn.execute('INSERT INTO ACTIVITYLOG (ACTIVITY) VALUES (\'response/'+str(cluster_id)+"flash "+json.dumps(output)+'\')')
     mqttc.publish("response/"+str(cluster_id),"flash " + json.dumps(output))
     global flashresponse
     flashresponse=True
@@ -299,6 +305,7 @@ def basepathdetect():
     else:
         templateData['consoledata']="Basestation connected at "+ usb_path_base+"\n"
         templateData['baseimagedata']="Basestation connected at "+ usb_path_base+"\n"
+    conn.execute('INSERT INTO ACTIVITYLOG (ACTIVITY) VALUES (\'response/'+str(cluster_id)+"usbbasepath"+json.dumps(templateData)+'\')')
     mqttc.publish("response/"+str(cluster_id),"usbbasepath"+json.dumps(templateData))
 
 gateway_init()
@@ -308,6 +315,7 @@ def pingall(imagenum):
     status=[]
     status.append(isNodeAlive(imagenum))
     status.append(imagenum)
+    conn.execute('INSERT INTO ACTIVITYLOG (ACTIVITY) VALUES (\''+"response/"+str(cluster_id)+"ping "+str(json.dumps(status))+'\')')
     mqttc.publish("response/"+str(cluster_id),"ping "+json.dumps(status))
 
 def switch(imagenum):
@@ -320,6 +328,7 @@ def switch(imagenum):
         'consoledata':out,
         'baseimagedata':imageinfo
     }
+    conn.execute('INSERT INTO ACTIVITYLOG (ACTIVITY) VALUES \''+"response/"+str(cluster_id),"switch "+json.dumps(switchData)+'\'')
     mqttc.publish("response/"+str(cluster_id),"switch "+json.dumps(switchData))
 
 def startlisten():
@@ -405,15 +414,16 @@ def serial_socket():
 
                     if listenrequest == True:
                         mqttc.publish("listen/"+str(cluster_id),packetdata)
-                        conn = sqlite3.connect('gateway.db')
+                        
                         conn.execute("INSERT INTO LISTENDATA (DATA) VALUES (\'"+packetdata+"\')")
                         conn.commit()
-                        conn.close()
+                        
                     elif ackrequired == True:
                         print packetdata
                         if packetdata.find("3f53")>0:
                             ack_index = packetdata.find("3f53")
-                            mqttc.publish("response"+str(cluster_id),"ackreceived "+str(packetdata[ack_index-4:ack_index]))
+                            ackrequired = False
+                            mqttc.publish("response/"+str(cluster_id),"ackreceived "+str(packetdata[ack_index-4:ack_index-2]))
                             
                     else:
                         if packetdata.find("3f53")>0:
