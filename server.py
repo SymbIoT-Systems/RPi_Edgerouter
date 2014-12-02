@@ -31,7 +31,7 @@ import zlib
 #Global variable declarations
 node_list = []
 cluster_id = 1
-
+node_list_alive=[]
 templateData = {
     'consoledata':"Nothing yet"+"\n",
     'baseimagedata':"BaseStation offline"+"\n",
@@ -140,7 +140,7 @@ def MQTTInit():
     mqttc.on_publish = on_publish
     # mqttc.on_subscribe = on_subscribe
 
-    url_str = 'mqtt://192.168.137.102:1883'
+    url_str = 'mqtt://192.168.137.103:1883'
     url = urlparse.urlparse(url_str)
     mqttc.connect(url.hostname, url.port)
 
@@ -203,6 +203,9 @@ def on_message(mosq, obj, msg):
             output = {'data':"Injection Not complete, Please Reflash"}
             conn.execute('INSERT INTO ACTIVITYLOG (ACTIVITY) VALUES (\''+"response/"+str(cluster_id)+"flash " + json.dumps(output)+'\')')
             mqttc.publish("response/"+str(cluster_id),"flash " + json.dumps(output))
+    elif "acitivitydelete" in str(msg.payload):
+    	conn.execute('DELETE FROM ACTIVITYLOG')
+    	conn.commit()
 
     elif "ackreceived" in str(msg.payload):
         ackreceived()
@@ -272,6 +275,9 @@ def isNodeAlive(nodenum):
         # conn.close()
         # #out="\nPinged " + str(nodenum) + " successfully!"
         out = "Alive "
+        global node_list_alive
+        if str(nodenum) not in node_list_alive:
+	        node_list_alive.append(str(nodenum))
     else:
         #out="\nPing of node no. " + str(nodenum) + " failed!"
         out = "Dead "
@@ -328,7 +334,7 @@ def switch(imagenum):
         'consoledata':out,
         'baseimagedata':imageinfo
     }
-    conn.execute('INSERT INTO ACTIVITYLOG (ACTIVITY) VALUES \''+"response/"+str(cluster_id),"switch "+json.dumps(switchData)+'\'')
+    conn.execute('INSERT INTO ACTIVITYLOG (ACTIVITY) VALUES (\''+"response/"+str(cluster_id),"switch "+json.dumps(switchData)+'\')')
     mqttc.publish("response/"+str(cluster_id),"switch "+json.dumps(switchData))
 
 def startlisten():
@@ -401,6 +407,7 @@ def data_edit():
 #If a user initiates the listen process this function reads data from serial and pushes it to the client through the socket
 def serial_socket():
     line=[]
+    numberofacksreceived=0
     ser = serial.Serial(port=usb_path_sniffer,baudrate=115200)
     global ackrequired,listenrequest
     while True:
@@ -420,9 +427,13 @@ def serial_socket():
                         
                     elif ackrequired == True:
                         print packetdata
+                        print (node_list_alive)
                         if packetdata.find("3f53")>0:
                             ack_index = packetdata.find("3f53")
-                            ackrequired = False
+                            numberofacksreceived+=1
+                            if numberofacksreceived == len(node_list_alive):
+                            	ackrequired = False
+                            	numberofacksreceived=0
                             mqttc.publish("response/"+str(cluster_id),"ackreceived "+str(packetdata[ack_index-4:ack_index-2]))
                             
                     else:
